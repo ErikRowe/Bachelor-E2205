@@ -1,0 +1,68 @@
+physical:
+  weight: 24.00     # kg
+  buoyancy: 23.00   # kg
+  center_of_mass: [-15.2, 1.0, 9.4]        # mm (x,y,z)
+  center_of_buoyancy: [-15.1, 0.9, 20.0]   # mm (x,y,z)
+
+
+propulsion:
+  dofs:
+    num: 6
+    which:
+      surge: true
+      sway:  true
+      heave: true
+      roll:  true
+      pitch: true
+      yaw:   true
+  thrusters:
+    num: 8
+    configuration_matrix:
+      [[ -0.70711,  0.00000,  0.00000,  -0.70711,  -0.70711,  0.00000,  0.00000, -0.70711], # Surge
+       [ 0.70711,  0.00000,  0.00000,  -0.70711, 0.70711,  0.00000,  0.00000,-0.70711], # Sway
+       [ 0.00000,  1.00000,  1.00000,  0.00000,  0.00000,  1.00000,  1.00000, 0.00000], # Heave
+       [ 0.00000, -0.22000, -0.22000,  0.00000,  0.00000,  0.22000,  0.22000, 0.00000], # Roll
+       [ 0.06500, -0.24000,  0.24000,  0.06500,  0.06500,  0.24000, -0.24000, 0.06500], # Pitch 
+       [ 0.32557,  0.00000,  0.00000,  0.32557,  -0.32557, 0.00000,  0.00000,-0.32557]] # Yaw
+
+    rate_of_change:
+      max: 1 # Maximum rate of change in newton per second for a thruster
+    map: [0, 1, 2, 3, 4, 5, 6, 7]  
+    direction: [1, -1, 1, 1, -1, -1, 1, -1]
+    offset: [80, 80, 80, 80, 80, 80, 80, 80] # Offset IN PWM!
+
+guidance:
+  dp:
+    rate: 20
+    acceptance_margins: [0.10, 0.10, 0.10, 0.15, 0.15, 0.15] # Order: x,y,z,roll,pitch,yaw
+    action_server: "/guidance_interface/dp_server"
+  LOS:
+    rate: 20
+    delta: 0.7
+    odom_topic: "/odometry/filtered"
+    action_server: "/guidance_interface/los_server"
+  vel: 
+    rate: 20
+  joy:
+    thrust_topic: "/thrust/joy"
+  
+
+controllers:
+  dp:
+    thrust_topic: "/thrust/dp"
+    odometry_topic: "/odometry/filtered"
+    velocity_gain: 1.0    # lower (1.0) is good when using slightly noisy state estimates  
+    position_gain: 35.0 
+    attitude_gain: 7.5  
+    integral_gain: 0.065
+  los_controller: # Note: Not loaded by the backstepping/pid controllers yet! Make sure to do this after tuning with dyn. reconf.
+    PID:
+      p: 25.0
+      i: 0.0024
+      d: 3.5
+      sat: 40.0
+    backstepping:
+      c:  0.5
+      k1: 25.0
+      k2: 10.0
+      k3: 10.0
