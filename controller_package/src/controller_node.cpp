@@ -1,6 +1,8 @@
 
+#include <chrono>
 #include <functional>
 #include <memory>
+#include <string>
 #include <cstdio>
 
 // Ros includes, these need to be included in dependencies
@@ -13,16 +15,16 @@
 
 
 using std::placeholders::_1;
+using namespace std::chrono_literals;
 
 class ControlNode : public rclcpp::Node
 {
 private:
   // Private variables
-  
+  // double linear_move[3], angular_move[3]; // These variables are each arrays, containing 3 numbers representing linear or angular movement
 
   // Private functions
-  float linear_, angular;
-  void joystick_callback(const sensor_msgs::msg::Joy::SharedPtr msg) const
+  void joystick_callback(const sensor_msgs::msg::Joy::SharedPtr msg) //const
   {
     /**
      * @brief Callback for the joystick reading
@@ -32,10 +34,14 @@ private:
      */
     
   }
+
   // Private ROS2 declerations
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr act_pub_;
+  Actuation actuation_object; // Calls actuation code as an object
   
 public:
+  double test; // test variable
   ControlNode()
   : Node("Control_Node")
   {
@@ -46,8 +52,14 @@ public:
      * 
      */
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
-      "joystick_topic", 10, std::bind(&ControlNode::joystick_callback, this, _1)
-    );
+      "joystick_topic", 10, std::bind(&ControlNode::joystick_callback, this, _1));
+    act_pub_ = this->create_publisher<std_msgs::msg::String>("/control/actuation", 10);
+
+    // START teststuff
+    std::array<double, 6> data = {1,2,3,4,5,6};
+    test = actuation_object.actuation(data);
+    std::cout << test;
+    // END teststuff
   }
 };
 
