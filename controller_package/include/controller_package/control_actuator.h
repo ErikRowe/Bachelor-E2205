@@ -1,3 +1,6 @@
+#include <functional>
+#include <memory>
+#include <stdlib.h>
 
 class Actuation
 {

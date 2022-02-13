@@ -11,7 +11,8 @@
 #include <sensor_msgs/msg/joy.hpp>
 
 // Control group includes
-#include <controller_package/control_actuator.h>
+#include "controller_package/controller_ros2.h"
+#include "controller_package/control_actuator.h"
 
 
 using std::placeholders::_1;

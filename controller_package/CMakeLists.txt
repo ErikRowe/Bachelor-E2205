@@ -11,7 +11,10 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
-add_executable(controller_node src/controller_node.cpp)
+add_executable(controller_node
+  src/controller_node.cpp
+  src/control_actuator.cpp
+)
 ament_target_dependencies(controller_node rclcpp std_msgs sensor_msgs)
 
 target_include_directories(controller_node PUBLIC
