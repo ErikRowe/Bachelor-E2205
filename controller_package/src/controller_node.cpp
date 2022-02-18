@@ -33,6 +33,8 @@ private:
      * TODO: make code to determine what input from the controller is sendt to controller input
      * 
      */
+
+
     
     
   }
@@ -54,7 +56,7 @@ public:
      * 
      */
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
-      "joystick_topic", 10, std::bind(&ControlNode::joystick_callback, this, _1));
+      "joy", 10, std::bind(&ControlNode::joystick_callback, this, _1));
     act_pub_ = this->create_publisher<std_msgs::msg::String>("/control/actuation", 10);
 
     // START teststuff
