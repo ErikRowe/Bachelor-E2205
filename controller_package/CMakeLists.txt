@@ -14,6 +14,7 @@ find_package(sensor_msgs REQUIRED)
 add_executable(controller_node
   src/controller_node.cpp
   src/control_actuator.cpp
+  src/control_input.cpp
 )
 ament_target_dependencies(controller_node rclcpp std_msgs sensor_msgs)
 
