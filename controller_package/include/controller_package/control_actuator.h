@@ -2,6 +2,8 @@
 #include <memory>
 #include <stdlib.h>
 
+#include <eigen3/Eigen/Dense>
+
 class Actuation
 {
     public:

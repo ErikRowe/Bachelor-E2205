@@ -25,16 +25,3 @@ Eigen::Vector6d error_vector(Eigen::Quaterniond q, Eigen::Quaterniond q_d,
     z << x_tilde, q_tilde.vec();
     return z;
 }
-
-int main(){
-    Eigen::Quaterniond q(1, 0, 0, 0);
-    Eigen::Quaterniond q_d(0, 0, 0, 1);
-    Eigen::Vector3d x(3, 7, -2);
-    Eigen::Vector3d x_d(-5, 10, 8);
-
-    Eigen::Matrix3d R = q.toRotationMatrix();
-    Eigen::Vector6d z = error_vector(q, q_d, x, x_d);
-    std::cout << "R=" << std::endl << R << std::endl;
-    std::cout << "Error vector z=" << std::endl << z << std::endl;
-    return 0;
-}
