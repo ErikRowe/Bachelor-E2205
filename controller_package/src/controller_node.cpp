@@ -1,15 +1,18 @@
-
+#include <eigen3/Eigen/Dense>
 #include <chrono>
 #include <functional>
 #include <memory>
 #include <string>
 #include <cstdio>
 
+
 // Ros includes, these need to be included in dependencies
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/joy.hpp>
 #include <geometry_msgs/msg/point.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 
 // Control group includes
 #include "controller_package/controller_ros2.h"
@@ -25,7 +28,6 @@ class ControlNode : public rclcpp::Node
 {
 private:
   // Private variables
-  // double linear_move[3], angular_move[3]; // These variables are each arrays, containing 3 numbers representing linear or angular movement
   // Private functions
 
   void joystick_callback(const sensor_msgs::msg::Joy msg) //const
@@ -36,30 +38,44 @@ private:
      * TODO: make code to determine what input from the controller is sendt to controller input
      * 
      */
-    double *actions;
-    actions = joystickInputClass.joystickToActions(msg.axes, msg.buttons);
-    PIDInput.changeSetPoint(actions);
-    RCLCPP_INFO(this->get_logger(), "Test: '%f'", actions[0]);
-    RCLCPP_INFO(this->get_logger(), "Surge: '%f'", PIDInput.x_d[0]);
-    RCLCPP_INFO(this->get_logger(), "Sway: '%f'", PIDInput.x_d[1]);
-    RCLCPP_INFO(this->get_logger(), "Heave: '%f'", PIDInput.x_d[2]);
-    
+    joystickInputClass.joystickToActions(msg.axes, msg.buttons);
+    PIDInput.changeSetPoint(joystickInputClass.actions);
     
   }
 
-  void position_callback(const geometry_msgs::msg::Point msg){
+  void estimate_callback(const nav_msgs::msg::Odometry msg){
+    auto pos = msg.pose.pose.position;
+    auto att = msg.pose.pose.orientation;
+    auto lin = msg.twist.twist.linear;
+    auto ang = msg.twist.twist.angular;
+    Eigen::Vector3d x = Eigen::Vector3d(pos.x, pos.y, pos.z);
+    Eigen::Quaterniond q = Eigen::Quaterniond(att.w, att.x, att.y, att.z);
+    Eigen::Vector6d velocity = Eigen::Vector6d(lin.x, lin.y, lin.z, ang.x, ang.y, ang.z);
+    PIDInput.updateGlobalParameters(x, q, velocity);
+  }
 
-    PIDInput.readPosAtt(msg.x, msg.y, msg.z);
+  void reference_publisher(){
+    auto message = geometry_msgs::msg::PoseStamped();
+    message.header.stamp = clock_.now();
+    message.header.frame_id = "map";
+    message.pose.position.x = PIDInput.x_d[0];
+    message.pose.position.y = PIDInput.x_d[1];
+    message.pose.position.z = PIDInput.x_d[2];
+    message.pose.orientation.w = PIDInput.q_d.w();
+    message.pose.orientation.x = PIDInput.q_d.x();
+    message.pose.orientation.y = PIDInput.q_d.y();
+    message.pose.orientation.z = PIDInput.q_d.z();
+    act_pub_->publish(message);
   }
 
   // Private ROS2 declerations
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
-  rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr pos_sub_;
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr act_pub_;
-  //Actuation actuation_object; // Calls actuation code as an object
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr act_pub_;
+  rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::Clock clock_;
   
 public:
-  double test; // test variable
   UserJoystickInput joystickInputClass;
   PIDInputClass PIDInput;
   ControlNode()
@@ -73,9 +89,11 @@ public:
      */
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
       "joy", 10, std::bind(&ControlNode::joystick_callback, this, _1));
-    pos_sub_ = this->create_subscription<geometry_msgs::msg::Point>(
-      "position", 10, std::bind(&ControlNode::position_callback, this, _1));
-    act_pub_ = this->create_publisher<std_msgs::msg::String>("/control/actuation", 10);
+    state_estim_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+      "state_estimate", 10, std::bind(&ControlNode::estimate_callback, this, _1));
+
+    act_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/reference/pose", 10);
+    timer_ = this->create_wall_timer(100ms, std::bind(&ControlNode::reference_publisher, this));
 
     // START teststuff
     //std::array<double, 6> data = {1,2,3,4,5,6};

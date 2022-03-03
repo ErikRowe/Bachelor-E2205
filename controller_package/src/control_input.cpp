@@ -2,19 +2,16 @@
 #include "controller_package/control_input.h"
 
 
-PIDInputClass::PIDInputClass(){
-        x_d = {0, 0, 0};
-        q_d = {1, 0, 0, 0};
-        x = {0, 0, 0};
-        q = {1, 0, 0, 0};
+void PIDInputClass::updateGlobalParameters(Eigen::Vector3d position, Eigen::Quaterniond orientation,
+                                           Eigen::Vector6d velocity){
+    x = position;
+    q = orientation;
+    v = velocity;
 }
 
-void PIDInputClass::readPosAtt(double x_global, double y_global, double z_global){
-    x << x_global, y_global, z_global;
-}
+void PIDInputClass::changeSetPoint(std::vector<double> actions){
 
-void PIDInputClass::changeSetPoint(double actions[6]){
-
+    bool orientChange = false;
     for (int i = 0; i < 3; i++){
         if (actions[i] != 0){
             last_frame_active_actions[i] = true;
@@ -24,7 +21,26 @@ void PIDInputClass::changeSetPoint(double actions[6]){
             last_frame_active_actions[i] = false;
             x_d[i] = x[i];
         }
+
+        if (actions[i + 3] != 0){
+            orientChange = true;
+        }
     }
+    
+    if (orientChange){
+        Eigen::Quaterniond q_relativeChange;
+        q_relativeChange = Eigen::AngleAxisd(actions[3], Eigen::Vector3d::UnitX())
+                        *Eigen::AngleAxisd(actions[4], Eigen::Vector3d::UnitY())
+                        *Eigen::AngleAxisd(actions[5], Eigen::Vector3d::UnitZ());
+        q_relativeChange.normalize();
+        q_d = q_relativeChange * q;
+        last_frame_active_actions[4] = true;
+    }
+    else if (last_frame_active_actions[4] == true){
+        q_d = q;
+        last_frame_active_actions[4] = false;
+    }
+    q_d.normalize();
 }
 
 

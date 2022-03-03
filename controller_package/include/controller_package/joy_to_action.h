@@ -12,7 +12,8 @@ class UserJoystickInput{
                                                 "Select", "Start", "XBoxButton",
                                                 "LStickButton", "RStickButton"};
 
-    double * joystickToActions(const std::vector<float> axes_input, const std::vector<int> button_input);
+        void joystickToActions(const std::vector<float> axes_input, const std::vector<int> button_input);
+        std::vector <double> actions;
 
     private:
         double surge_scaling;

@@ -9,7 +9,7 @@ UserJoystickInput::UserJoystickInput(){
         yaw_scaling     = 1.0;
 }
 
-double * UserJoystickInput::joystickToActions(const std::vector<float> axes_input, const std::vector<int> button_input){
+void UserJoystickInput::joystickToActions(const std::vector<float> axes_input, const std::vector<int> button_input){
     std::map<std::string, double> axes;
     std::map<std::string, double> buttons;
 
@@ -26,7 +26,5 @@ double * UserJoystickInput::joystickToActions(const std::vector<float> axes_inpu
     double roll     = (buttons.find("RBumper")->second - buttons.find("LBumper")->second)/2 * roll_scaling;
     double pitch    = axes.find("RStickUD")->second * pitch_scaling;
     double yaw      = axes.find("RStickLR")->second * yaw_scaling;
-
-    static double actions[6] = {surge, sway, heave, roll, pitch, yaw};
-    return actions;
+    actions = {surge, sway, heave, roll, pitch, yaw};
 }
