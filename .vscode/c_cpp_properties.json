@@ -4,6 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/controller_package/include",
                 "/opt/ros/galactic/include"
             ],
             "defines": [],

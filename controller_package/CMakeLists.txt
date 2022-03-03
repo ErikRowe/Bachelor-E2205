@@ -10,15 +10,30 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(bluerov_interfaces REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3)
+find_package(Sophus REQUIRED)
 
 add_executable(controller_node
   src/controller_node.cpp
   src/control_actuator.cpp
   src/control_input.cpp
 )
-ament_target_dependencies(controller_node rclcpp std_msgs sensor_msgs)
+
+set(dependencies
+    rclcpp
+    eigen3_cmake_module
+    Eigen3
+    sensor_msgs
+    nav_msgs
+    std_msgs
+    Sophus
+    bluerov_interfaces
+)
+ament_target_dependencies(controller_node ${dependencies})
+ament_export_dependencies(${dependencies})
 
 target_include_directories(controller_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
