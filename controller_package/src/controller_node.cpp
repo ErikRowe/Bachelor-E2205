@@ -95,7 +95,7 @@ public:
 
     ref_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/reference/pose", 10);
     //act_pub_ = this->create_publisher<std_msgs::msg::String>("/actuation", 10);
-    timer_ = this->create_wall_timer(100ms, std::bind(&ControlNode::reference_publisher, this));
+    timer_ = this->create_wall_timer(10ms, std::bind(&ControlNode::reference_publisher, this));
   }
 };
 

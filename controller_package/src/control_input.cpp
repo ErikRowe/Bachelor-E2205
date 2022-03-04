@@ -11,11 +11,13 @@ void PIDInputClass::updateGlobalParameters(Eigen::Vector3d position, Eigen::Quat
 
 void PIDInputClass::changeSetPoint(std::vector<double> actions){
 
+    Eigen::Matrix3d R = q.toRotationMatrix();
+    Eigen::Vector3d B_frame_action = R.transpose() * Eigen::Vector3d(actions[0], actions[1], actions[2]);
     bool orientChange = false;
     for (int i = 0; i < 3; i++){
-        if (actions[i] != 0){
+        if (B_frame_action[i] != 0){
             last_frame_active_actions[i] = true;
-            x_d[i] = x[i] + actions[i];
+            x_d[i] = x[i] + B_frame_action[i];
         }
         else if (last_frame_active_actions[i] == true){
             last_frame_active_actions[i] = false;
