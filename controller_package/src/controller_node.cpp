@@ -65,13 +65,14 @@ private:
     message.pose.orientation.x = PIDInput.q_d.x();
     message.pose.orientation.y = PIDInput.q_d.y();
     message.pose.orientation.z = PIDInput.q_d.z();
-    act_pub_->publish(message);
+    ref_pub_->publish(message);
   }
 
   // Private ROS2 declerations
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr act_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr ref_pub_;
+  //rclcpp::Publisher<std_msgs::msg::String>::SharedPtr act_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Clock clock_;
   
@@ -92,7 +93,8 @@ public:
     state_estim_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
       "state_estimate", 10, std::bind(&ControlNode::estimate_callback, this, _1));
 
-    act_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/reference/pose", 10);
+    ref_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/reference/pose", 10);
+    //act_pub_ = this->create_publisher<std_msgs::msg::String>("/actuation", 10);
     timer_ = this->create_wall_timer(100ms, std::bind(&ControlNode::reference_publisher, this));
   }
 };
