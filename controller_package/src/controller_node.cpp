@@ -94,12 +94,6 @@ public:
 
     act_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/reference/pose", 10);
     timer_ = this->create_wall_timer(100ms, std::bind(&ControlNode::reference_publisher, this));
-
-    // START teststuff
-    //std::array<double, 6> data = {1,2,3,4,5,6};
-    //test = actuation_object.actuation(data);
-    //std::cout << test;
-    // END teststuff
   }
 };
 

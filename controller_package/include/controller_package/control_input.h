@@ -2,11 +2,10 @@
 #include <iostream>
 #include <vector>
 
+#include "controller_package/eigen_typedef.h"
+
 using std::placeholders::_1;
-namespace Eigen{
-    typedef Eigen::Matrix<double, 6, 1> Vector6d;
-    typedef Eigen::Matrix<double, 6, 6> Matrix6d;
-}
+
 
 class PIDInputClass{
     public:
@@ -17,7 +16,7 @@ class PIDInputClass{
         Eigen::Vector6d v = Eigen::Vector6d::Zero();                //Current body-fixed velocities
 
         /**
-         * @brief Read global variables and update copies
+         * @brief Read global variables and update local copies
          * 
          * @param position Global position in x, y, z
          * @param orientation Global orientation in Quaternion representation

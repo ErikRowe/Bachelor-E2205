@@ -12,8 +12,17 @@ class UserJoystickInput{
                                                 "Select", "Start", "XBoxButton",
                                                 "LStickButton", "RStickButton"};
 
+
+        /**
+         * @brief Converts joystick input to desired action and updates actions variable
+         * 
+         * @param axes_input Float array with analog stick input from Joy
+         * @param button_input Int array with button input from Joy
+         * 
+         */
         void joystickToActions(const std::vector<float> axes_input, const std::vector<int> button_input);
-        std::vector <double> actions;
+
+        std::vector <double> actions;       //Keeps information about current user actions
 
     private:
         double surge_scaling;

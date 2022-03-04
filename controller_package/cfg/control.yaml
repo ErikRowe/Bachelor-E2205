@@ -66,3 +66,14 @@ controllers:
       k1: 25.0
       k2: 10.0
       k3: 10.0
+
+ControlNode:
+  ros_parameters:
+    joy_action_scaling:
+      surge_scaling: 1.0
+      sway_scaling: 1.0
+      heave_scaling: 1.0
+      roll_scaling: 1.0
+      pitch_scaling: 1.0
+      yaw_scaling: 1.0
+    
