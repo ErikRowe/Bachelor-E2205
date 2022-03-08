@@ -17,8 +17,8 @@
 // Control group includes
 #include "controller_package/controller_ros2.h"
 //#include "controller_package/control_actuator.h"
-#include "controller_package/control_input.h"
 #include "controller_package/joy_to_action.h"
+#include "controller_package/controller_complete.h"
 
 
 using std::placeholders::_1;
@@ -26,6 +26,28 @@ using namespace std::chrono_literals;
 
 class ControlNode : public rclcpp::Node
 {
+public:
+  ControlNode()
+  : Node("Control_Node")
+  {
+    /**
+     * @brief stuff
+     * 
+     * TODO: Make a subscriber in the same node to handle actuation data that is to be sendt out from the node.
+     * 
+     */
+    joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
+      "joy", 10, std::bind(&ControlNode::joystick_callback, this, _1));
+    //state_estim_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+    //  "state_estimate", 10, std::bind(&ControlNode::estimate_callback, this, _1));
+
+    ref_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/reference/pose", 10);
+    //act_pub_ = this->create_publisher<std_msgs::msg::String>("/actuation", 10);
+    timer_ = this->create_wall_timer(10ms, std::bind(&ControlNode::reference_publisher, this));
+    PIDTimer_ = this->create_wall_timer(30ms, std::bind(&ControlNode::sample_PID, this));
+  }
+
+
 private:
   // Private variables
   // Private functions
@@ -39,10 +61,10 @@ private:
      * 
      */
     joystickInputClass.joystickToActions(msg.axes, msg.buttons);
-    PIDInput.changeSetPoint(joystickInputClass.actions);
+    PID.changeSetPoint(joystickInputClass.actions);
     
   }
-
+/*
   void estimate_callback(const nav_msgs::msg::Odometry msg){
     auto pos = msg.pose.pose.position;
     auto att = msg.pose.pose.orientation;
@@ -51,52 +73,61 @@ private:
     Eigen::Vector3d x = Eigen::Vector3d(pos.x, pos.y, pos.z);
     Eigen::Quaterniond q = Eigen::Quaterniond(att.w, att.x, att.y, att.z);
     Eigen::Vector6d velocity = Eigen::Vector6d(lin.x, lin.y, lin.z, ang.x, ang.y, ang.z);
-    PIDInput.updateGlobalParameters(x, q, velocity);
+    PID.updateGlobalParameters(x, q, velocity);
+  }
+  */
+
+  void moveEntity(Eigen::Vector6d tau){
+    double dt = 0.030;
+    Eigen::Quaterniond q = PID.q;
+    Eigen::Quaterniond q_new;
+    Eigen::Matrix3d R = q.toRotationMatrix();
+    Eigen::Vector3d v_lin = R * Eigen::Vector3d(tau[0], tau[1], tau[2]) * dt;
+    Eigen::Vector3d v_ang = R * Eigen::Vector3d(tau[3], tau[4], tau[5]) * dt;
+    Eigen::Vector3d x_new;
+    x_new << PID.x[0] + v_lin[0], PID.x[1] + v_lin[1], PID.x[2] + v_lin[2];
+
+    //Eigen::Vector3d v_B = R * v_ang;
+    Eigen::Quaterniond q_relativeChange;
+    q_relativeChange = Eigen::AngleAxisd(v_ang[0], Eigen::Vector3d::UnitX())
+                      *Eigen::AngleAxisd(v_ang[1], Eigen::Vector3d::UnitY())
+                      *Eigen::AngleAxisd(v_ang[2], Eigen::Vector3d::UnitZ());
+    q_relativeChange.normalize();
+    q_new = q_relativeChange * q;
+    q.normalize();
+    PID.q = q_new;
+    PID.x = x_new;
   }
 
   void reference_publisher(){
     auto message = geometry_msgs::msg::PoseStamped();
     message.header.stamp = clock_.now();
     message.header.frame_id = "map";
-    message.pose.position.x = PIDInput.x_d[0];
-    message.pose.position.y = PIDInput.x_d[1];
-    message.pose.position.z = PIDInput.x_d[2];
-    message.pose.orientation.w = PIDInput.q_d.w();
-    message.pose.orientation.x = PIDInput.q_d.x();
-    message.pose.orientation.y = PIDInput.q_d.y();
-    message.pose.orientation.z = PIDInput.q_d.z();
+    message.pose.position.x = PID.x[0];
+    message.pose.position.y = PID.x[1];
+    message.pose.position.z = PID.x[2];
+    message.pose.orientation.w = PID.q.w();
+    message.pose.orientation.x = PID.q.x();
+    message.pose.orientation.y = PID.q.y();
+    message.pose.orientation.z = PID.q.z();
     ref_pub_->publish(message);
+  }
+
+  void sample_PID(){
+    Eigen::Vector6d tau = PID.main();
+    moveEntity(tau);
   }
 
   // Private ROS2 declerations
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;
+  //rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr ref_pub_;
   //rclcpp::Publisher<std_msgs::msg::String>::SharedPtr act_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::TimerBase::SharedPtr PIDTimer_;
   rclcpp::Clock clock_;
-  
-public:
   UserJoystickInput joystickInputClass;
-  PIDInputClass PIDInput;
-  ControlNode()
-  : Node("Control_Node")
-  {
-    /**
-     * @brief stuff
-     * 
-     * TODO: Make a subscriber in the same node to handle actuation data that is to be sendt out from the node.
-     * 
-     */
-    joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
-      "joy", 10, std::bind(&ControlNode::joystick_callback, this, _1));
-    state_estim_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-      "state_estimate", 10, std::bind(&ControlNode::estimate_callback, this, _1));
-
-    ref_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/reference/pose", 10);
-    //act_pub_ = this->create_publisher<std_msgs::msg::String>("/actuation", 10);
-    timer_ = this->create_wall_timer(10ms, std::bind(&ControlNode::reference_publisher, this));
-  }
+  PIDClass PID;
 };
 
 

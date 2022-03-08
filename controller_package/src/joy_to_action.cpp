@@ -22,7 +22,7 @@ void UserJoystickInput::joystickToActions(const std::vector<float> axes_input, c
 
     double surge    = axes.find("LStickUD")->second * surge_scaling;
     double sway     = axes.find("LStickLR")->second * sway_scaling;
-    double heave    = (axes.find("RTrigger")->second - axes.find("LTrigger")->second)/2 * heave_scaling;
+    double heave    = (axes.find("LTrigger")->second - axes.find("RTrigger")->second)/2 * heave_scaling;
     double roll     = (buttons.find("RBumper")->second - buttons.find("LBumper")->second)/2 * roll_scaling;
     double pitch    = axes.find("RStickUD")->second * pitch_scaling;
     double yaw      = axes.find("RStickLR")->second * yaw_scaling;

@@ -15,9 +15,11 @@ find_package(nav_msgs REQUIRED)
 
 add_executable(controller_node
   src/controller_node.cpp
-  src/control_actuator.cpp
-  src/control_input.cpp
+  #src/control_actuator.cpp
+  #src/control_input.cpp
   src/joy_to_action.cpp
+  #src/control_PID.cpp
+  src/controller_complete.cpp
 )
 ament_target_dependencies(controller_node rclcpp std_msgs sensor_msgs geometry_msgs nav_msgs)
 
