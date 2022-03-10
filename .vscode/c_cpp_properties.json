@@ -5,6 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/controller_package/include",
+                "${HOME}/bs_ws/build/**",
                 "/opt/ros/galactic/include"
             ],
             "defines": [],

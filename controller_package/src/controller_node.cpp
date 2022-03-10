@@ -11,8 +11,10 @@
 #include <sensor_msgs/msg/joy.hpp>
 
 // Control group includes
+#include "bluerov_interfaces/msg/actuator_input.hpp"
 #include "controller_package/controller_ros2.h"
-#include "controller_package/control_actuator.h"
+#include "controller_package/control_actuator.hpp"
+
 
 
 using std::placeholders::_1;
@@ -39,11 +41,16 @@ private:
 
   // Private ROS2 declerations
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr act_pub_;
-  Actuation actuation_object; // Calls actuation code as an object
+  rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_;
+  Actuation actuation_; // Calls actuation class as an object
+  rclcpp::Clock clock_;
+
   
 public:
-  double test; // test variable
+  // double test; // test variable
+  // Actuator stuff
+    bluerov_interfaces::msg::ActuatorInput actuation_message_;
+
   ControlNode()
   : Node("Control_Node")
   {
@@ -55,13 +62,22 @@ public:
      */
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
       "joystick_topic", 10, std::bind(&ControlNode::joystick_callback, this, _1));
-    act_pub_ = this->create_publisher<std_msgs::msg::String>("/control/actuation", 10);
-
-    // START teststuff
-    std::array<double, 6> data = {1,2,3,4,5,6};
-    test = actuation_object.actuation(data);
-    std::cout << test;
-    // END teststuff
+    act_pub_ = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/control/actuation", 10);
+  }
+  void send_actuation(Eigen::vector6d tau)
+  {
+    Eigen::Vector8d thrusters_ = actuation_.build_actuation(tau);
+    // Actuator stuff
+    actuation_message_.header.stamp = clock_.now(); // This needs to be time now. is ros format
+    actuation_message_.thrust1 = thrusters_(0);
+    actuation_message_.thrust2 = thrusters_(1);
+    actuation_message_.thrust3 = thrusters_(2);
+    actuation_message_.thrust4 = thrusters_(3);
+    actuation_message_.thrust5 = thrusters_(4);
+    actuation_message_.thrust6 = thrusters_(5);
+    actuation_message_.thrust7 = thrusters_(6);
+    actuation_message_.thrust8 = thrusters_(7);
+    act_pub_->publish(actuation_message_);
   }
 };
 
