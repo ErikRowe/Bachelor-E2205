@@ -1,25 +1,4 @@
-#include <eigen3/Eigen/Dense>
-#include <chrono>
-#include <functional>
-#include <memory>
-#include <string>
-#include <cstdio>
-
-
-// Ros includes, these need to be included in dependencies
-#include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/string.hpp>
-#include <sensor_msgs/msg/joy.hpp>
-#include <geometry_msgs/msg/point.hpp>
-#include <geometry_msgs/msg/pose_stamped.hpp>
-#include <nav_msgs/msg/odometry.hpp>
-
-// Control group includes
-#include "bluerov_interfaces/msg/actuator_input.hpp"
-#include "controller_package/controller_ros2.h"
-#include "controller_package/joy_to_action.h"
-#include "controller_package/controller_complete.h"
-#include "controller_package/control_actuator.hpp"
+#include "controller_package/controller_node.hpp"
 
 
 
@@ -49,7 +28,7 @@ public:
     PIDTimer_ = this->create_wall_timer(30ms, std::bind(&ControlNode::sample_PID, this));
   }
 
-  void send_actuation(Eigen::vector6d tau)
+  void send_actuation(Eigen::Vector6d tau)
   {
     Eigen::Vector8d thrusters_ = actuation_.build_actuation(tau);
     // Actuator stuff

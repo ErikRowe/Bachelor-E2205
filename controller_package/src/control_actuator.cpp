@@ -31,7 +31,7 @@ Actuation::Actuation(){
     B_pinv_ = B_.completeOrthogonalDecomposition().pseudoInverse();
 }
 
-Eigen::Vector8d Actuation::build_actuation(Eigen::vector6d tau){
+Eigen::Vector8d Actuation::build_actuation(Eigen::Vector6d tau){
     Eigen::Vector8d thrust_ = B_pinv_ * tau;
     return thrust_;
 }
