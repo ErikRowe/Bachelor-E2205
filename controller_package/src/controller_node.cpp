@@ -133,7 +133,7 @@ private:
 
   void sample_PID(){
     Eigen::Vector6d tau = PID.main();
-    moveEntity(tau);
+    send_actuation(tau);
   }
 
   // Private ROS2 declerations
@@ -148,7 +148,6 @@ private:
   PIDClass PID;
   Actuation actuation_; // Calls actuation class as an object
   rclcpp::Clock clock_; // Makes a clock for ros2
-  
 };
 
 
