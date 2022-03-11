@@ -40,15 +40,13 @@ private:
   }
 
   // Private ROS2 declerations
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
-  rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_;
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_; // Initiates subscriber to joy
+  rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_; // Initiates publisher to actuation driver
   Actuation actuation_; // Calls actuation class as an object
-  rclcpp::Clock clock_;
+  rclcpp::Clock clock_; // Makes a clock for ros2
 
   
 public:
-  // double test; // test variable
-  // Actuator stuff
     bluerov_interfaces::msg::ActuatorInput actuation_message_;
 
   ControlNode()
@@ -57,7 +55,7 @@ public:
     /**
      * @brief stuff
      * 
-     * TODO: Make a subscriber in the same node to handle actuation data that is to be sendt out from the node.
+     * TODO: Make a hpp file for the node, where stuff is initiated
      * 
      */
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
