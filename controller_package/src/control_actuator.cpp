@@ -1,46 +1,37 @@
 
-#include <controller_package/control_actuator.h>
+#include "controller_package/control_actuator.hpp"
 
-double Actuation::actuation(std::array<double, 6> movement_data){
-    std::array<double, 3> linear_mov = {    // Stores linear movement in array
-        std::get<0>(movement_data),
-        std::get<1>(movement_data),
-        std::get<2>(movement_data)
-    };
-    std::array<double, 3> angular_mov = {   // Stores angular movement in array
-        std::get<3>(movement_data),
-        std::get<4>(movement_data),
-        std::get<5>(movement_data)
-    };
-    double pwm_signal = make_pwm();
-    return pwm_signal;
+
+
+
+
+Actuation::Actuation(){
+    LENGTHS_THRUSTERS << 0.156, 0.156, -0.156, -0.156, 0.12, 0.12, -0.12, -0.12,
+                        0.111, -0.111, 0.111, -0.111, 0.218, -0.218, 0.218, -0.218,
+                        0.085, 0.085, 0.085, 0.085, 0, 0, 0, 0; 
+
+    // The next two for loops Builds the geometry message
+    for (int i = 0; i < 4; i++)
+    {
+        double temp2 = local_Pi / 180 * Thruster_install_angles[i];
+        Eigen::Matrix3d temp3;
+        temp3 << cos(temp2), -sin(temp2), 0,
+                sin(temp2), cos(temp2), 0,
+                0, 0, 1;
+        Eigen::Vector3d thrust_dir = Thruster_spin_direction[i] * temp3 * e_1;
+        B_.col(i) << thrust_dir, -thrust_dir.cross(LENGTHS_THRUSTERS.col(i));
+    }
+    for (int i = 4; i < 8; i++)
+    {
+        Eigen::Vector3d thrust_dir = - Thruster_spin_direction[i] * e_3;
+        B_.col(i) << thrust_dir, -thrust_dir.cross(LENGTHS_THRUSTERS.col(i)); 
+    }
+
+    // Actual inversion of B_
+    B_pinv_ = B_.completeOrthogonalDecomposition().pseudoInverse();
 }
 
-double Actuation::make_pwm(){
-    return 6.55 + 2.11;
+Eigen::Vector8d Actuation::build_actuation(Eigen::vector6d tau){
+    Eigen::Vector8d thrust_ = B_pinv_ * tau;
+    return thrust_;
 }
-
-
-// class Actuation
-// {
-// private:
-//     double make_pwm(){
-//         return 6.55+2.11;
-//     }
-// public:
-//     double actuation(std::array<double, 6> movement_data)
-//     {
-//         std::array<double, 3> linear_mov = {    // Stores linear movement in array
-//             std::get<0>(movement_data),
-//             std::get<1>(movement_data),
-//             std::get<2>(movement_data)
-//         };
-//         std::array<double, 3> angular_mov = {   // Stores angular movement in array
-//             std::get<3>(movement_data),
-//             std::get<4>(movement_data),
-//             std::get<5>(movement_data)
-//         };
-//         double pwm_signal = make_pwm();
-//         return pwm_signal;
-//     }
-// };

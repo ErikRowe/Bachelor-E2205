@@ -15,10 +15,12 @@
 #include <nav_msgs/msg/odometry.hpp>
 
 // Control group includes
+#include "bluerov_interfaces/msg/actuator_input.hpp"
 #include "controller_package/controller_ros2.h"
-//#include "controller_package/control_actuator.h"
 #include "controller_package/joy_to_action.h"
 #include "controller_package/controller_complete.h"
+#include "controller_package/control_actuator.hpp"
+
 
 
 using std::placeholders::_1;
@@ -42,9 +44,25 @@ public:
     //  "state_estimate", 10, std::bind(&ControlNode::estimate_callback, this, _1));
 
     ref_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/reference/pose", 10);
-    //act_pub_ = this->create_publisher<std_msgs::msg::String>("/actuation", 10);
+    act_pub_ = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/actuation", 10);
     timer_ = this->create_wall_timer(10ms, std::bind(&ControlNode::reference_publisher, this));
     PIDTimer_ = this->create_wall_timer(30ms, std::bind(&ControlNode::sample_PID, this));
+  }
+
+  void send_actuation(Eigen::vector6d tau)
+  {
+    Eigen::Vector8d thrusters_ = actuation_.build_actuation(tau);
+    // Actuator stuff
+    actuation_message_.header.stamp = clock_.now(); // This needs to be time now. is ros format
+    actuation_message_.thrust1 = thrusters_(0);
+    actuation_message_.thrust2 = thrusters_(1);
+    actuation_message_.thrust3 = thrusters_(2);
+    actuation_message_.thrust4 = thrusters_(3);
+    actuation_message_.thrust5 = thrusters_(4);
+    actuation_message_.thrust6 = thrusters_(5);
+    actuation_message_.thrust7 = thrusters_(6);
+    actuation_message_.thrust8 = thrusters_(7);
+    act_pub_->publish(actuation_message_);
   }
 
 
@@ -119,15 +137,18 @@ private:
   }
 
   // Private ROS2 declerations
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   //rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr ref_pub_;
-  //rclcpp::Publisher<std_msgs::msg::String>::SharedPtr act_pub_;
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_; // Initiates subscriber to joy
+  rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_; // Initiates publisher to actuation driver
+  bluerov_interfaces::msg::ActuatorInput actuation_message_;
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::TimerBase::SharedPtr PIDTimer_;
-  rclcpp::Clock clock_;
   UserJoystickInput joystickInputClass;
   PIDClass PID;
+  Actuation actuation_; // Calls actuation class as an object
+  rclcpp::Clock clock_; // Makes a clock for ros2
+  
 };
 
 
