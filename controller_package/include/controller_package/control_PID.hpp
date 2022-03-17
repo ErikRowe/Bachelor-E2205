@@ -1,4 +1,3 @@
-#include <eigen3/Eigen/Dense>
 #include <vector>
 
 #include "controller_package/eigen_typedef.h"
@@ -8,19 +7,22 @@ using std::placeholders::_1;
 class PIDClass{
     public:
 
-        Eigen::Vector3d x_d = Eigen::Vector3d::Zero();              //Setpoint position
-        Eigen::Quaterniond q_d = Eigen::Quaterniond(1, 0, 0, 0);    //Setpoint attitude in quaternions
-        Eigen::Vector3d x = Eigen::Vector3d::Zero();                //Current position
-        Eigen::Quaterniond q = Eigen::Quaterniond(1, 0, 0, 0);      //Current attitude in quaternions
-        Eigen::Vector6d v = Eigen::Vector6d::Zero();                //Current body-fixed velocities
-
         /**
          * @brief Performs PID operations to produce tau
+         * 
+         * @param q     Current attitude in quaternion representation
+         * @param q_d   Setpoint attitude in quaternion representation
+         * @param x     Current position in world frame
+         * @param x_d   Setpoint position in world frame
+         * @param v     Current linear and angular velocities in the body frame
          * 
          * @return 6x1 vector with linear force and angular torque
          * 
          */
-        Eigen::Vector6d main();
+        Eigen::Vector6d main(const Eigen::Quaterniond &q, const Eigen::Quaterniond &q_d,
+                             const Eigen::Vector3d &x, const Eigen::Vector3d &x_d,
+                             const Eigen::Vector6d &v);
+
 
         /**
          * @brief Read global variables and update local copies
@@ -30,18 +32,10 @@ class PIDClass{
          * @param velocity Body-frame linear and angular velocities
          * 
          */
-
+        /*
         void updateGlobalParameters(Eigen::Vector3d position, Eigen::Quaterniond orientation,
                                     Eigen::Vector6d velocity);
-
-        /**
-         * @brief Reads user actions and converts to setpoint change
-         * 
-         * @param actions Joystick inputs from axes and buttons
-         * 
-         */
-        void changeSetPoint(std::vector<double> actions);
-
+        */
     private:
         /**
          * @brief Calculates proportional gain
@@ -56,10 +50,16 @@ class PIDClass{
 
         /**
          * @brief Uses position and attitude to compute an error vector
+         * 
+         * @param q     Current attitude in quaternion representation
+         * @param q_d   Setpoint attitude in quaternion representation
+         * @param x     Current position in world frame
+         * @param x_d   Setpoint position in world frame
          *
          * @return 6x1 vector with position and attitude error
          */
-        Eigen::Vector6d getErrorVector();
+        Eigen::Vector6d getErrorVector(const Eigen::Quaterniond &q, const Eigen::Quaterniond &q_d,
+                                       const Eigen::Vector3d &x, const Eigen::Vector3d &x_d);
         //Eigen::Matrix6d integralGain();
 
         /**
@@ -77,5 +77,4 @@ class PIDClass{
         double W = 1;        //Gravitational force mg
         double B = 1;        //Weight and buoyancy
         double c = 10.0;     //Scaling constant for proportional gain
-        bool last_frame_active_actions[4];  //Tracker if last frame had action input
 };
