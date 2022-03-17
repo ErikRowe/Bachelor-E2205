@@ -76,6 +76,6 @@ class PIDClass{
         Eigen::Vector3d rb = Eigen::Vector3d::Zero();               //Centre of buoyancy
         double W = 1;        //Gravitational force mg
         double B = 1;        //Weight and buoyancy
-        double c = 10.0;    //Scaling constant for proportional gain
+        double c = 10.0;     //Scaling constant for proportional gain
         bool last_frame_active_actions[4];  //Tracker if last frame had action input
 };

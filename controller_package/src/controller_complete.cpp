@@ -27,12 +27,12 @@ void PIDClass::updateGlobalParameters(Eigen::Vector3d position, Eigen::Quaternio
 void PIDClass::changeSetPoint(std::vector<double> actions){
 
     Eigen::Matrix3d R = q.toRotationMatrix();
-    Eigen::Vector3d B_frame_linear_action = R * Eigen::Vector3d(actions[0], actions[1], actions[2]);
+    Eigen::Vector3d I_frame_linear_action = R * Eigen::Vector3d(actions[0], actions[1], actions[2]);
     bool orientChange = false;
     for (int i = 0; i < 3; i++){
-        if (B_frame_linear_action[i] != 0){
+        if (I_frame_linear_action[i] != 0){
             last_frame_active_actions[i] = true;
-            x_d[i] = x[i] + B_frame_linear_action[i];
+            x_d[i] = x[i] + I_frame_linear_action[i];
         }
         else if (last_frame_active_actions[i] == true){
             last_frame_active_actions[i] = false;
@@ -45,13 +45,13 @@ void PIDClass::changeSetPoint(std::vector<double> actions){
     }
     
     if (orientChange){
-        Eigen::Vector3d B_frame_angular_action = R * Eigen::Vector3d(actions[3], actions[4], actions[5]);
         Eigen::Quaterniond q_relativeChange;
-        q_relativeChange = Eigen::AngleAxisd(B_frame_angular_action[0], Eigen::Vector3d::UnitX())
-                          *Eigen::AngleAxisd(B_frame_angular_action[1], Eigen::Vector3d::UnitY())
-                          *Eigen::AngleAxisd(B_frame_angular_action[2], Eigen::Vector3d::UnitZ());
+        q_relativeChange = Eigen::AngleAxisd(actions[3], Eigen::Vector3d::UnitX())
+                          *Eigen::AngleAxisd(actions[4], Eigen::Vector3d::UnitY())
+                          *Eigen::AngleAxisd(actions[5], Eigen::Vector3d::UnitZ());
         q_relativeChange.normalize();
-        q_d = q_relativeChange * q;
+
+        q_d = q * q_relativeChange;
         last_frame_active_actions[4] = true;
     }
     else if (last_frame_active_actions[4] == true){
