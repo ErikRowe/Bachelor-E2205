@@ -23,19 +23,6 @@ class PIDClass{
                              const Eigen::Vector3d &x, const Eigen::Vector3d &x_d,
                              const Eigen::Vector6d &v);
 
-
-        /**
-         * @brief Read global variables and update local copies
-         * 
-         * @param position Global position in x, y, z
-         * @param orientation Global orientation in Quaternion representation
-         * @param velocity Body-frame linear and angular velocities
-         * 
-         */
-        /*
-        void updateGlobalParameters(Eigen::Vector3d position, Eigen::Quaterniond orientation,
-                                    Eigen::Vector6d velocity);
-        */
     private:
         /**
          * @brief Calculates proportional gain

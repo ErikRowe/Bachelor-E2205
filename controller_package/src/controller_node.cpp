@@ -89,10 +89,9 @@ private:
     auto att = msg.pose.pose.orientation;
     auto lin = msg.twist.twist.linear;
     auto ang = msg.twist.twist.angular;
-    Eigen::Vector3d x = Eigen::Vector3d(pos.x, pos.y, pos.z);
-    Eigen::Quaterniond q = Eigen::Quaterniond(att.w, att.x, att.y, att.z);
-    Eigen::Vector6d velocity = Eigen::Vector6d(lin.x, lin.y, lin.z, ang.x, ang.y, ang.z);
-    PID.updateGlobalParameters(x, q, velocity);
+    x = Eigen::Vector3d(pos.x, pos.y, pos.z);
+    q = Eigen::Quaterniond(att.w, att.x, att.y, att.z);
+    v = Eigen::Vector6d(lin.x, lin.y, lin.z, ang.x, ang.y, ang.z);
   }
   */
 
