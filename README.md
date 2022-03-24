@@ -18,7 +18,13 @@ The PID depends on state estimation information such as position, attitude and v
 
 ## PID
 
-Position: **x** = [x, y, z]
-Attitude: **q** = [w, i, j, k]
-Velocities: **v** = [v_x, v_y, v_z, w_r, w_p, w_y]
+Control equation: **tau** = - Kp*v - Kd*z + g
+
+- PID Output: **tau** = [Force_x, Force_y, Force_z, Torque_r, Torque_p, Torque_y]
+- Velocities: **v** = [v_x, v_y, v_z, w_r, w_p, w_y]
+- Error Vector: **z** = [x_d, y_d, z_d, sgn(w)*i_d, sgn(w)*j_d, sgn(w)*k_d]
+- Position: **x** = [x, y, z]
+- Attitude: **q** = [w, i, j, k]
+
+
 
