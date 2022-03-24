@@ -18,5 +18,7 @@ The PID depends on state estimation information such as position, attitude and v
 
 ## PID
 
-Requires information regarding position **x** = [x, y, z], attitude **q** = [w, i, j, k] and velocities **v** = [vx, vy, vz, wx, wy, wz]
+Position: **x** = [x, y, z]
+Attitude: **q** = [w, i, j, k]
+Velocities: **v** = [v_x, v_y, v_z, w_r, w_p, w_y]
 
