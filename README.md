@@ -18,7 +18,7 @@ The PID depends on state estimation information such as position, attitude and v
 
 ## PID
 
-Control equation: **tau** = - Kp* **v** - Kd* **z** + **g
+Control equation: **tau** = - Kp* **v** - Kd* **z** + **g**
 
 - PID Output: **tau** = [Force_x, Force_y, Force_z, Torque_r, Torque_p, Torque_y]
 - Velocities: **v** = [v_x, v_y, v_z, w_r, w_p, w_y]
