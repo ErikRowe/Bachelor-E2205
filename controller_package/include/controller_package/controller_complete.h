@@ -1,7 +1,4 @@
-#include <eigen3/Eigen/Dense>
-#include <vector>
-
-#include "controller_package/eigen_typedef.h"
+#include "controller_package/common.hpp"
 
 using std::placeholders::_1;
 
