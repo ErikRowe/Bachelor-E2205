@@ -17,8 +17,10 @@
 #include "controller_package/common.hpp"
 #include "bluerov_interfaces/msg/actuator_input.hpp"
 #include "controller_package/joy_to_action.h"
-#include "controller_package/controller_complete.h"
 #include "controller_package/control_actuator.hpp"
+#include "controller_package/control_PID.hpp"
+#include "controller_package/control_reference.hpp"
+
 
 
 using std::placeholders::_1;
@@ -41,7 +43,13 @@ class ControlNode : public rclcpp::Node
         UserJoystickInput joystickInputClass;
         PIDClass PID;
         Actuation actuation_; // Calls actuation class as an object
+        ReferenceClass Reference;
         rclcpp::Clock clock_; // Makes a clock for ros2
+
+        //Dummy position and orientation parameters
+        Eigen::Vector3d x = Eigen::Vector3d::Zero();
+        Eigen::Quaterniond q = Eigen::Quaterniond(1, 0, 0, 0);
+        Eigen::Vector6d v = Eigen::Vector6d::Zero();
 
         /**
          * @brief builds an actuation message from PID output

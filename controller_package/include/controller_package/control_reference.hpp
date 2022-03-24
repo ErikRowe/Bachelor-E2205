@@ -1,5 +1,4 @@
-#include "controller_package/eigen_typedef.h"
-#include "vector"
+#include "controller_package/common.hpp"
 
 class ReferenceClass{
     public:
