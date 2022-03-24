@@ -12,7 +12,7 @@ Repository that organizes the work of group E2205
 
 # PID
 
-Position 
+Requires information regarding position **x** = [x, y, z], attitude **q** = [w, i, j, k] and velocities **v** = [vx, vy, vz, wx, wy, wz]
 
 
 # Simen
