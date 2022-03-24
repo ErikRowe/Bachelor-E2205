@@ -20,12 +20,3 @@ The PID depends on state estimation information such as position, attitude and v
 
 Requires information regarding position **x** = [x, y, z], attitude **q** = [w, i, j, k] and velocities **v** = [vx, vy, vz, wx, wy, wz]
 
-
-# Simen
-## Install dependecies
-sudo apt install wiringpi
-sudo apt-get install libwiringpi-dev
-
-## Maybe these
-sudo apt-get install libi2c-dev
-gpio load i2c
