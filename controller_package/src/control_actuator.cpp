@@ -13,12 +13,12 @@ Actuation::Actuation(){
     // The next two for loops Builds the geometry message
     for (int i = 0; i < 4; i++)
     {
-        double temp2 = local_Pi / 180 * Thruster_install_angles[i];
-        Eigen::Matrix3d temp3;
-        temp3 << cos(temp2), -sin(temp2), 0,
-                sin(temp2), cos(temp2), 0,
+        double theta_thruster = local_Pi / 180 * Thruster_install_angles[i];
+        Eigen::Matrix3d z_rotation_matrix;
+        z_rotation_matrix << cos(theta_thruster), -sin(theta_thruster), 0,
+                sin(theta_thruster), cos(theta_thruster), 0,
                 0, 0, 1;
-        Eigen::Vector3d thrust_dir = Thruster_spin_direction[i] * temp3 * e_1;
+        Eigen::Vector3d thrust_dir = Thruster_spin_direction[i] * z_rotation_matrix * e_1;
         B_.col(i) << thrust_dir, -thrust_dir.cross(LENGTHS_THRUSTERS.col(i));
     }
     for (int i = 4; i < 8; i++)
