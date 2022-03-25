@@ -33,23 +33,23 @@ class ControlNode : public rclcpp::Node
 
     private:
         // Class declarations
-        //rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;
-        rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr ref_pub_;
-        rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_; // Initiates subscriber to joy
-        rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_; // Initiates publisher to actuation driver
-        bluerov_interfaces::msg::ActuatorInput actuation_message_;
-        rclcpp::TimerBase::SharedPtr timer_;
-        rclcpp::TimerBase::SharedPtr PIDTimer_;
-        UserJoystickInput joystickInputClass;
-        PIDClass PID;
-        Actuation actuation_; // Calls actuation class as an object
-        ReferenceClass Reference;
-        rclcpp::Clock clock_; // Makes a clock for ros2
+        //rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;        // Subscribes to state estimation
+        rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr ref_pub_;             // Publishes current state (WILL BE REMOVED)
+        rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;                    // Subscribes to joy input
+        rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_;     // Publishes actuation message
+        bluerov_interfaces::msg::ActuatorInput actuation_message_;                          // Actuation message object building
+        rclcpp::TimerBase::SharedPtr timer_;                                                // ROS2 Timer for reference publish (WILL BE REMOVED)
+        rclcpp::TimerBase::SharedPtr PIDTimer_;                                             // Timer to sample PID
+        UserJoystickInput joystick_handler_;                                                // Instance of joystick input handler
+        PIDClass PID_;                                                                      // Instance of PID logic handler
+        Actuation actuation_;                                                               // Instance of actuation message handler
+        ReferenceClass reference_handler_;                                                  // Instance of reference frame handler
+        rclcpp::Clock clock_;                                                               // Makes a clock for ros2
 
-        //Dummy position and orientation parameters
-        Eigen::Vector3d x = Eigen::Vector3d::Zero();
-        Eigen::Quaterniond q = Eigen::Quaterniond(1, 0, 0, 0);
-        Eigen::Vector6d v = Eigen::Vector6d::Zero();
+
+        Eigen::Vector3d x = Eigen::Vector3d::Zero();                    //Locally stored position vector
+        Eigen::Quaterniond q = Eigen::Quaterniond(1, 0, 0, 0);          //Locally stored attitude vector
+        Eigen::Vector6d v = Eigen::Vector6d::Zero();                    //Locally stored velocity vector
 
         /**
          * @brief builds an actuation message from PID output
@@ -59,37 +59,35 @@ class ControlNode : public rclcpp::Node
         void send_actuation(Eigen::Vector6d tau);
 
         /**
-         * @brief callback message to joy topic message. 
-         * Will transform joystick data to actions,
-         * and use this to change the setpoint
+         * @brief callback message to joy topic message. Sends message values to joystick input handler
          * 
-         * @param msg 
+         * @param msg Joy message with axes and button values
          */
         void joystick_callback(const sensor_msgs::msg::Joy msg); //const
 
         /**
-         * @brief 
+         * @brief (WILL BE REMOVED) Function to test pipeline in RVIZ2
          * 
          * @param tau 
          */
         void moveEntity(Eigen::Vector6d tau);
 
         /**
-         * @brief 
+         * @brief (WILL BE REMOVED) Function to publish state
          * 
          */
         void reference_publisher();
 
         /**
-         * @brief 
+         * @brief Function to sample PID and retrieve tau
          * 
          */
         void sample_PID();
 
         // /**
-        //  * @brief 
+        //  * @brief Callback msg to read global state estimaton
         //  * 
-        //  * @param msg 
+        //  * @param msg Contains information regarding velocities, position and attitude
         //  */
         // void estimate_callback(const nav_msgs::msg::Odometry msg);
 

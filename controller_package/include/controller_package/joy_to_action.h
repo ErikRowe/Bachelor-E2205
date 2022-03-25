@@ -5,9 +5,11 @@
 class UserJoystickInput{
     public:
         UserJoystickInput();
+        //Order of Joy axes array and corresponding joystick on the XBox One Controller
         const std::string axes_mapping[8] = {"LStickLR", "LStickUD", "LTrigger", "RStickLR",
                                              "RStickUD", "RTrigger", "DpadLR", "DPadUD"};
 
+        //Order of Joy button array and corresponding button on the XBox One Controller
         const std::string button_mapping[11] = {"A", "B", "X", "Y", "LBumper", "RBumper",
                                                 "Select", "Start", "XBoxButton",
                                                 "LStickButton", "RStickButton"};
@@ -25,6 +27,7 @@ class UserJoystickInput{
         std::vector <double> actions;       //Keeps information about current user actions
 
     private:
+        //Scaling factors used to scale actions
         double surge_scaling;
         double sway_scaling;
         double heave_scaling;
