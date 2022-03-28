@@ -22,9 +22,9 @@ class ReferenceClass{
         /**
         * @brief Reads button input status and handles accordingly. Called  and used from update_setpoint
         * 
-        * @param setpoint_change_lin Temporary position setpoint change variable. Locally used in update_setpoint
-        * @param setpoint_change_att Temporary attitude setpoint change variable. Locally used in update_setpoint
-        * @param button_input Array with button input values
+        * @param setpoint_change_lin T  emporary position setpoint change variable. Locally used in update_setpoint
+        * @param setpoint_change_att    Temporary attitude setpoint change variable. Locally used in update_setpoint
+        * @param button_input           Array with button input values
         * 
         */
         void handle_button_input(Eigen::Vector3d &setpoint_change_lin, Eigen::Quaterniond &setpoint_change_att,

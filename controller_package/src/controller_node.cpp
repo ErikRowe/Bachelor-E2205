@@ -33,8 +33,6 @@ void ControlNode::joystick_callback(const sensor_msgs::msg::Joy msg)
 {
     joystick_handler_.joystickToActions(msg.axes, msg.buttons);
     reference_handler_.update_setpoint(&joystick_handler_.movement, &joystick_handler_.active_buttons, q, x);
-    //auto outputVar = (int)joystick_handler_.active_buttons[0];
-    //RCLCPP_INFO(this->get_logger(), "Publishing: '%i'", outputVar);
 }
 
 void ControlNode::moveEntity(Eigen::Vector6d tau)
@@ -77,7 +75,7 @@ void ControlNode::reference_publisher()
 void ControlNode::sample_PID()
 {
     Eigen::Vector6d tau = PID_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
-    moveEntity(tau);
+    send_actuation(tau);
 }
 
 // Main initiates the node, and keeps it alive

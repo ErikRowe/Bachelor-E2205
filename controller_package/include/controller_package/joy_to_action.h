@@ -25,7 +25,7 @@ class UserJoystickInput{
         void joystickToActions(const std::vector<float> axes_input, const std::vector<int> button_input);
 
         std::vector <double> movement;       //Stores information about current user movement
-        std::vector <bool> active_buttons = {false, false};   //Stores information about current active button presses
+        std::vector <bool> active_buttons;   //Stores information about current active button presses
 
     private:
         //Scaling factors used to scale actions
