@@ -1,9 +1,6 @@
 #include "controller_package/joy_to_action.h"
 
 UserJoystickInput::UserJoystickInput(){
-        surge_scaling   = 1.0;
-        sway_scaling    = 1.0;
-        heave_scaling   = 1.0;
         roll_scaling    = 1.0;
         pitch_scaling   = 1.0;
         yaw_scaling     = 1.0;
@@ -27,4 +24,11 @@ void UserJoystickInput::joystickToActions(const std::vector<float> axes_input, c
     double pitch    = axes.find("RStickUD")->second * pitch_scaling;
     double yaw      = axes.find("RStickLR")->second * yaw_scaling;
     actions = {surge, sway, heave, roll, pitch, yaw};
+}
+
+void UserJoystickInput::update_params(double surge_s, double sway_s, double heave_s)
+{
+    surge_scaling   = surge_s;
+    sway_scaling    = sway_s;
+    heave_scaling   = heave_s;
 }

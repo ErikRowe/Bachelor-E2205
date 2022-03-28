@@ -49,3 +49,14 @@ Eigen::Vector6d PIDClass::getErrorVector(const Eigen::Quaterniond &q, const Eige
     return z;
 }
 
+void PIDClass::update_params(double _Kx, double _Kd, std::vector<double> _rG, std::vector<double> _rB, double _W, double _B, double _c)
+{
+    Eigen::Matrix3d Kx = Eigen::Matrix3d::Identity() * _Kx;
+    Eigen::Matrix6d Kd = Eigen::Matrix6d::Identity() * _Kd;
+    Eigen::Vector3d rg = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(_rG.data(), _rG.size());
+    Eigen::Vector3d rb = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(_rB.data(), _rB.size());
+    double W = _W;
+    double B = _B;
+    double c = _c;
+}
+

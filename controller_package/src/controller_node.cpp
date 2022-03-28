@@ -1,7 +1,17 @@
 #include "controller_package/controller_node.hpp"
 
-ControlNode::ControlNode ()
-: Node("Control_Node")
+ControlNode::ControlNode(const rclcpp::NodeOptions &options)
+    : Node("Control_Node", options),
+      gravitational_force(declare_parameter<double>("G_force", 1.0)),
+      buoyancy_weight(declare_parameter<double>("Buoancy_and_Weight", 1.0)),
+      scaling_linear_proportional_gain(declare_parameter<double>("Proportional_gain_linear", 5.0)),
+      scaling_angular_proportional_gain(declare_parameter<double>("Proportional_gain_angular", 10.0)),
+      scaling_derivative_gain(declare_parameter<double>("Derivative_gain", 1.0)),
+      centre_of_gravity(declare_parameter<std::vector<double>>("Centre_of_gravity", {0.0, 0.0, 0.0})),
+      center_of_buoyancy(declare_parameter<std::vector<double>>("Centre_of_buoyancy", {0.0, 0.0, 0.0})),
+      scaling_surge(declare_parameter<double>("Scaling_surge", 1.0)),
+      scaling_sway(declare_parameter<double>("Scaling_sway", 1.0)),
+      scaling_heave(declare_parameter<double>("Scaling_heave", 1.0))
 {
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
         "joy", 10, std::bind(&ControlNode::joystick_callback, this, _1));
@@ -74,6 +84,11 @@ void ControlNode::reference_publisher()
 
 void ControlNode::sample_PID()
 {
+    // update params in PID and Joystick
+    joystick_handler_.update_params(scaling_surge, scaling_sway, scaling_heave);
+    PID_.update_params(scaling_linear_proportional_gain, scaling_derivative_gain, centre_of_gravity, center_of_buoyancy, gravitational_force, buoyancy_weight, scaling_angular_proportional_gain);
+
+    // Run PID
     Eigen::Vector6d tau = PID_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
     send_actuation(tau);
 }
@@ -82,7 +97,7 @@ void ControlNode::sample_PID()
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<ControlNode>());
+  rclcpp::spin(std::make_shared<ControlNode>(rclcpp::NodeOptions()));
   rclcpp::shutdown();
   return 0;
 }

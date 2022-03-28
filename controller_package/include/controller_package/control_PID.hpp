@@ -21,6 +21,19 @@ class PIDClass{
                              const Eigen::Vector3d &x, const Eigen::Vector3d &x_d,
                              const Eigen::Vector6d &v);
 
+        /**
+         * @brief Function updates the parameters of the controller from params.yaml
+         * 
+         * @param _Kx 
+         * @param _Kd 
+         * @param _rG 
+         * @param _rB 
+         * @param _W 
+         * @param _B 
+         * @param _c 
+         */
+        void update_params(double _Kx, double _Kd, std::vector<double> _rG, std::vector<double> _rB, double _W, double _B, double _c);
+
     private:
         /**
          * @brief Calculates proportional gain
@@ -55,11 +68,11 @@ class PIDClass{
          */
         int signum(double x);
         
-        Eigen::Matrix3d Kx = Eigen::Matrix3d::Identity() * 5;       //Scaling of proportional gain
-        Eigen::Matrix6d Kd = Eigen::Matrix6d::Identity();           //Scaling of derivative gain
-        Eigen::Vector3d rg = Eigen::Vector3d::Zero();               //Centre of gravity
-        Eigen::Vector3d rb = Eigen::Vector3d::Zero();               //Centre of buoyancy
-        double W = 1;        //Gravitational force mg
-        double B = 1;        //Weight and buoyancy
-        double c = 10.0;     //Scaling constant for proportional gain
+        Eigen::Matrix3d Kx;         //Scaling of linear proportional gain
+        Eigen::Matrix6d Kd;         //Scaling of derivative gain
+        Eigen::Vector3d rg;         //Centre of gravity
+        Eigen::Vector3d rb;         //Centre of buoyancy
+        double W;                   //Gravitational force mg
+        double B;                   //Weight and buoyancy
+        double c;                   //Scaling constant for angular proportional gain
 };

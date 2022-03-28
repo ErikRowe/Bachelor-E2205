@@ -26,6 +26,15 @@ class UserJoystickInput{
 
         std::vector <double> actions;       //Keeps information about current user actions
 
+        /**
+         * @brief Function updates the parameters of the controller from params.yaml
+         * 
+         * @param surge_s 
+         * @param sway_s 
+         * @param heave_s 
+         */
+        void update_params(double surge_s, double sway_s, double heave_s);
+
     private:
         //Scaling factors used to scale actions
         double surge_scaling;
