@@ -75,7 +75,7 @@ void ControlNode::reference_publisher()
 void ControlNode::sample_PID()
 {
     Eigen::Vector6d tau = PID_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
-    send_actuation(tau);
+    moveEntity(tau);
 }
 
 // Main initiates the node, and keeps it alive
