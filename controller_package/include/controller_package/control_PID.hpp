@@ -35,9 +35,10 @@ class PIDClass{
          * @param _c_i
          * @param _windup_att
          * @param _windup_pos
+         * @param _control_mode
          */
         void update_params(double _Kx, double _Kxi, double _Kd, std::vector<double> _rG, std::vector<double> _rB,
-                           double _W, double _B, double _c, double _c_i, double _windup_att, double _windup_pos);
+                           double _W, double _B, double _c, double _c_i, double _windup_att, double _windup_pos, int _control_mode);
 
     private:
         /**
@@ -101,4 +102,5 @@ class PIDClass{
         double c_i;                 //Scaling constant for angular integral gain
         double W_max_att;           //Windup limit attitude
         double W_max_pos;           //Windup limit position
+        int control_mode;           //Type of control (PID, PD etc)
 };

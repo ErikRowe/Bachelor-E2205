@@ -59,6 +59,7 @@ class ControlNode : public rclcpp::Node
         double scaling_surge;
         double scaling_sway;
         double scaling_heave;
+        int control_mode;
         std::vector<double> centre_of_gravity;
         std::vector<double> center_of_buoyancy;
 

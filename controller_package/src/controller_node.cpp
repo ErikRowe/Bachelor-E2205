@@ -14,6 +14,7 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
       scaling_surge(declare_parameter<double>("Scaling_surge", 1.0)),
       scaling_sway(declare_parameter<double>("Scaling_sway", 1.0)),
       scaling_heave(declare_parameter<double>("Scaling_heave", 1.0)),
+      control_mode(declare_parameter<int>("Control_mode", 0)),
       centre_of_gravity(declare_parameter<std::vector<double>>("Centre_of_gravity", {0.0, 0.0, 0.0})),
       center_of_buoyancy(declare_parameter<std::vector<double>>("Centre_of_buoyancy", {0.0, 0.0, 0.0}))
 {
@@ -93,7 +94,7 @@ void ControlNode::sample_PID()
     PID_.update_params(scaling_linear_proportional_gain, scaling_linear_integral_gain, scaling_derivative_gain,
                        centre_of_gravity, center_of_buoyancy, gravitational_force,
                        buoyancy_weight, scaling_angular_proportional_gain, scaling_angular_integral_gain,
-                       maximum_integral_windup_attitude, maximum_integral_windup_position);
+                       maximum_integral_windup_attitude, maximum_integral_windup_position, control_mode);
 
     // Run PID
     Eigen::Vector6d tau = PID_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);

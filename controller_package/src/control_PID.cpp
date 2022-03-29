@@ -20,6 +20,11 @@ Eigen::Vector6d PIDClass::main(const Eigen::Quaterniond &q, const Eigen::Quatern
     Eigen::Vector6d g;
     Eigen::Vector6d tau;
     g << fb - fg, rb.cross(fb) - rg.cross(fg);
+
+    //If PD -> I = 0
+    if (control_mode == 0){
+        integral = Eigen::Vector6d::Zero();
+    }
     tau = -Kd * v - Kp * z - integral + g;
     return tau;
 }
@@ -75,7 +80,7 @@ Eigen::Vector6d PIDClass::getErrorVector(const Eigen::Quaterniond &q, const Eige
 }
 
 void PIDClass::update_params(double _Kx, double _Kxi, double _Kd, std::vector<double> _rG, std::vector<double> _rB,
-                             double _W, double _B, double _c, double _c_i, double _windup_att, double _windup_pos)
+                             double _W, double _B, double _c, double _c_i, double _windup_att, double _windup_pos, int _control_mode)
 {
     Kx = Eigen::Matrix3d::Identity() * _Kx;
     Kxi = Eigen::Matrix3d::Identity() * _Kxi;
@@ -88,5 +93,6 @@ void PIDClass::update_params(double _Kx, double _Kxi, double _Kd, std::vector<do
     c_i = _c_i;
     W_max_att = _windup_att;
     W_max_pos = _windup_pos;
+    control_mode = _control_mode;
 }
 

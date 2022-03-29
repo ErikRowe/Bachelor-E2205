@@ -20,6 +20,7 @@ Control_Node:
     Scaling_heave: 1.0
     Scaling_surge: 1.0
     Scaling_sway: 1.0
+    Control_mode: 0
     qos_overrides:
       /parameter_events:
         publisher:
