@@ -6,12 +6,16 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
       buoyancy_weight(declare_parameter<double>("Buoancy_and_Weight", 1.0)),
       scaling_linear_proportional_gain(declare_parameter<double>("Proportional_gain_linear", 5.0)),
       scaling_angular_proportional_gain(declare_parameter<double>("Proportional_gain_angular", 10.0)),
+      scaling_linear_integral_gain(declare_parameter<double>("Integral_gain_linear", 5.0)),
+      scaling_angular_integral_gain(declare_parameter<double>("Integral_gain_angular", 10.0)),
+      maximum_integral_windup_attitude(declare_parameter<double>("Windup_max_attitude", 1.0)),
+      maximum_integral_windup_position(declare_parameter<double>("Windup_max_position", 5.0)),
       scaling_derivative_gain(declare_parameter<double>("Derivative_gain", 1.0)),
-      centre_of_gravity(declare_parameter<std::vector<double>>("Centre_of_gravity", {0.0, 0.0, 0.0})),
-      center_of_buoyancy(declare_parameter<std::vector<double>>("Centre_of_buoyancy", {0.0, 0.0, 0.0})),
       scaling_surge(declare_parameter<double>("Scaling_surge", 1.0)),
       scaling_sway(declare_parameter<double>("Scaling_sway", 1.0)),
-      scaling_heave(declare_parameter<double>("Scaling_heave", 1.0))
+      scaling_heave(declare_parameter<double>("Scaling_heave", 1.0)),
+      centre_of_gravity(declare_parameter<std::vector<double>>("Centre_of_gravity", {0.0, 0.0, 0.0})),
+      center_of_buoyancy(declare_parameter<std::vector<double>>("Centre_of_buoyancy", {0.0, 0.0, 0.0}))
 {
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
         "joy", 10, std::bind(&ControlNode::joystick_callback, this, _1));
@@ -42,7 +46,7 @@ void ControlNode::send_actuation(Eigen::Vector6d tau)
 void ControlNode::joystick_callback(const sensor_msgs::msg::Joy msg)
 {
     joystick_handler_.joystickToActions(msg.axes, msg.buttons);
-    reference_handler_.changeSetPoint(joystick_handler_.actions, q, x);
+    reference_handler_.update_setpoint(&joystick_handler_.movement, &joystick_handler_.active_buttons, q, x);
 }
 
 void ControlNode::moveEntity(Eigen::Vector6d tau)
@@ -86,11 +90,14 @@ void ControlNode::sample_PID()
 {
     // update params in PID and Joystick
     joystick_handler_.update_params(scaling_surge, scaling_sway, scaling_heave);
-    PID_.update_params(scaling_linear_proportional_gain, scaling_derivative_gain, centre_of_gravity, center_of_buoyancy, gravitational_force, buoyancy_weight, scaling_angular_proportional_gain);
+    PID_.update_params(scaling_linear_proportional_gain, scaling_linear_integral_gain, scaling_derivative_gain,
+                       centre_of_gravity, center_of_buoyancy, gravitational_force,
+                       buoyancy_weight, scaling_angular_proportional_gain, scaling_angular_integral_gain,
+                       maximum_integral_windup_attitude, maximum_integral_windup_position);
 
     // Run PID
     Eigen::Vector6d tau = PID_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
-    send_actuation(tau);
+    moveEntity(tau);
 }
 
 // Main initiates the node, and keeps it alive

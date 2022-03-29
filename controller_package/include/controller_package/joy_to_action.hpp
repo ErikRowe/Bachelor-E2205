@@ -4,7 +4,6 @@
 
 class UserJoystickInput{
     public:
-        UserJoystickInput();
         //Order of Joy axes array and corresponding joystick on the XBox One Controller
         const std::string axes_mapping[8] = {"LStickLR", "LStickUD", "LTrigger", "RStickLR",
                                              "RStickUD", "RTrigger", "DpadLR", "DPadUD"};
@@ -24,24 +23,21 @@ class UserJoystickInput{
          */
         void joystickToActions(const std::vector<float> axes_input, const std::vector<int> button_input);
 
-        std::vector <double> actions;       //Keeps information about current user actions
+        std::vector <double> movement;       //Stores information about current user movement
+        std::vector <bool> active_buttons;   //Stores information about current active button presses
 
         /**
          * @brief Function updates the parameters of the controller from params.yaml
          * 
-         * @param surge_s 
-         * @param sway_s 
-         * @param heave_s 
+         * @param surge_s Scales surge step magnitude
+         * @param sway_s  Scales sway step magnitude
+         * @param heave_s Scales heave step magnitude
          */
         void update_params(double surge_s, double sway_s, double heave_s);
 
     private:
-        //Scaling factors used to scale actions
+        //Scaling factors used to scale action magnitude
         double surge_scaling;
         double sway_scaling;
         double heave_scaling;
-        double roll_scaling;
-        double pitch_scaling;
-        double yaw_scaling;
-
 };

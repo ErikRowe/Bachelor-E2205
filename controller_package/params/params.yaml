@@ -13,6 +13,10 @@ Control_Node:
     G_force: 1.0
     Proportional_gain_angular: 10.0
     Proportional_gain_linear: 5.0
+    Integral_gain_angular: 10.0
+    Integral_gain_linear: 5.0
+    Windup_max_attitude: 1.0
+    Windup_max_position: 5.0
     Scaling_heave: 1.0
     Scaling_surge: 1.0
     Scaling_sway: 1.0

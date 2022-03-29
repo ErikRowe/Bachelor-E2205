@@ -16,7 +16,7 @@
 // Control group includes
 #include "controller_package/common.hpp"
 #include "bluerov_interfaces/msg/actuator_input.hpp"
-#include "controller_package/joy_to_action.h"
+#include "controller_package/joy_to_action.hpp"
 #include "controller_package/control_actuator.hpp"
 #include "controller_package/control_PID.hpp"
 #include "controller_package/control_reference.hpp"
@@ -51,10 +51,14 @@ class ControlNode : public rclcpp::Node
         double buoyancy_weight;
         double scaling_linear_proportional_gain;
         double scaling_angular_proportional_gain;
+        double scaling_linear_integral_gain;
+        double scaling_angular_integral_gain;
+        double maximum_integral_windup_attitude;
+        double maximum_integral_windup_position;
         double scaling_derivative_gain;
         double scaling_surge;
-        double scaling_heave;
         double scaling_sway;
+        double scaling_heave;
         std::vector<double> centre_of_gravity;
         std::vector<double> center_of_buoyancy;
 
