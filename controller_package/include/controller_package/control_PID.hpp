@@ -32,6 +32,22 @@ class PIDClass{
          */
         Eigen::Matrix6d proportionalGain(Eigen::Matrix3d R);
 
+        /**
+         * @brief Calculates integral gain
+         * 
+         * @param R Current attitude as rotational matrix
+         * 
+         * @return Integral gain as 6x6 matrix
+         * 
+         */
+        Eigen::Matrix6d integralGain(Eigen::Matrix3d R);
+
+        /**
+         * @brief Limit integral windup
+         * 
+         */
+        void check_integral_windup();
+
 
         /**
          * @brief Uses position and attitude to compute an error vector
@@ -56,10 +72,15 @@ class PIDClass{
         int signum(double x);
         
         Eigen::Matrix3d Kx = Eigen::Matrix3d::Identity() * 5;       //Scaling of proportional gain
+        Eigen::Matrix3d Kxi = Eigen::Matrix3d::Identity() * 5;      //Scaling of integral gain
         Eigen::Matrix6d Kd = Eigen::Matrix6d::Identity();           //Scaling of derivative gain
         Eigen::Vector3d rg = Eigen::Vector3d::Zero();               //Centre of gravity
         Eigen::Vector3d rb = Eigen::Vector3d::Zero();               //Centre of buoyancy
-        double W = 1;        //Gravitational force mg
-        double B = 1;        //Weight and buoyancy
-        double c = 10.0;     //Scaling constant for proportional gain
+        Eigen::Vector6d integral = Eigen::Vector6d::Zero();         //Variable to store integrated values
+        double W = 1;                   //Gravitational force mg
+        double B = 1;                   //Weight and buoyancy
+        double c = 10.0;                //Scaling constant for proportional gain
+        double c_i = 10.0;              //Scaling constant for integral gain
+        double W_max_att = 1.0;         //Windup limit attitude
+        double W_max_pos = 5.0;         //Windup limit position
 };

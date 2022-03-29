@@ -32,7 +32,7 @@ void ControlNode::send_actuation(Eigen::Vector6d tau)
 void ControlNode::joystick_callback(const sensor_msgs::msg::Joy msg)
 {
     joystick_handler_.joystickToActions(msg.axes, msg.buttons);
-    reference_handler_.changeSetPoint(joystick_handler_.actions, q, x);
+    reference_handler_.update_setpoint(&joystick_handler_.movement, &joystick_handler_.active_buttons, q, x);
 }
 
 void ControlNode::moveEntity(Eigen::Vector6d tau)
@@ -75,7 +75,7 @@ void ControlNode::reference_publisher()
 void ControlNode::sample_PID()
 {
     Eigen::Vector6d tau = PID_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
-    send_actuation(tau);
+    moveEntity(tau);
 }
 
 // Main initiates the node, and keeps it alive
