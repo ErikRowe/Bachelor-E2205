@@ -21,6 +21,25 @@ class PIDClass{
                              const Eigen::Vector3d &x, const Eigen::Vector3d &x_d,
                              const Eigen::Vector6d &v);
 
+        /**
+         * @brief Function updates the parameters of the controller from params.yaml
+         * 
+         * @param _Kx 
+         * @param _Kxi
+         * @param _Kd 
+         * @param _rG 
+         * @param _rB 
+         * @param _W 
+         * @param _B 
+         * @param _c
+         * @param _c_i
+         * @param _windup_att
+         * @param _windup_pos
+         * @param _control_mode
+         */
+        void update_params(double _Kx, double _Kxi, double _Kd, std::vector<double> _rG, std::vector<double> _rB,
+                           double _W, double _B, double _c, double _c_i, double _windup_att, double _windup_pos, int _control_mode);
+
     private:
         /**
          * @brief Calculates proportional gain
@@ -46,7 +65,7 @@ class PIDClass{
          * @brief Limit integral windup
          * 
          */
-        void check_integral_windup();
+        void limit_integral_windup();
 
 
         /**
@@ -71,16 +90,17 @@ class PIDClass{
          */
         int signum(double x);
         
-        Eigen::Matrix3d Kx = Eigen::Matrix3d::Identity() * 5;       //Scaling of proportional gain
-        Eigen::Matrix3d Kxi = Eigen::Matrix3d::Identity() * 5;      //Scaling of integral gain
-        Eigen::Matrix6d Kd = Eigen::Matrix6d::Identity();           //Scaling of derivative gain
-        Eigen::Vector3d rg = Eigen::Vector3d::Zero();               //Centre of gravity
-        Eigen::Vector3d rb = Eigen::Vector3d::Zero();               //Centre of buoyancy
-        Eigen::Vector6d integral = Eigen::Vector6d::Zero();         //Variable to store integrated values
-        double W = 1;                   //Gravitational force mg
-        double B = 1;                   //Weight and buoyancy
-        double c = 10.0;                //Scaling constant for proportional gain
-        double c_i = 10.0;              //Scaling constant for integral gain
-        double W_max_att = 1.0;         //Windup limit attitude
-        double W_max_pos = 5.0;         //Windup limit position
+        Eigen::Matrix3d Kx;         //Scaling of linear proportional gain
+        Eigen::Matrix3d Kxi;        //Scaling of linear integral gain
+        Eigen::Matrix6d Kd;         //Scaling of derivative gain
+        Eigen::Vector3d rg;         //Centre of gravity
+        Eigen::Vector3d rb;         //Centre of buoyancy
+        Eigen::Vector6d integral;   //Built up integral value
+        double W;                   //Gravitational force mg
+        double B;                   //Weight and buoyancy
+        double c;                   //Scaling constant for angular proportional gain
+        double c_i;                 //Scaling constant for angular integral gain
+        double W_max_att;           //Windup limit attitude
+        double W_max_pos;           //Windup limit position
+        int control_mode;           //Type of control (PID, PD etc)
 };

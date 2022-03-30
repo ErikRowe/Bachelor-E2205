@@ -11,7 +11,7 @@ Eigen::Vector6d PIDClass::main(const Eigen::Quaterniond &q, const Eigen::Quatern
     
     Eigen::Matrix6d Ki = integralGain(R);
     integral += Ki * z;
-    check_integral_windup();
+    limit_integral_windup();
     
 
     Eigen::Vector3d fg = R.transpose() * Eigen::Vector3d(0, 0, W);
@@ -20,6 +20,11 @@ Eigen::Vector6d PIDClass::main(const Eigen::Quaterniond &q, const Eigen::Quatern
     Eigen::Vector6d g;
     Eigen::Vector6d tau;
     g << fb - fg, rb.cross(fb) - rg.cross(fg);
+
+    //If PD -> I = 0
+    if (control_mode == 0){
+        integral = Eigen::Vector6d::Zero();
+    }
     tau = -Kd * v - Kp * z - integral + g;
     return tau;
 }
@@ -44,7 +49,7 @@ Eigen::Matrix6d PIDClass::integralGain(Eigen::Matrix3d R){
     return Ki;
 }
 
-void PIDClass::check_integral_windup(){
+void PIDClass::limit_integral_windup(){
     for (int i = 0; i < 3; i++){
         if (abs(integral[i]) > W_max_pos){
             integral[i] = W_max_pos * signum(integral[i]);
@@ -72,5 +77,22 @@ Eigen::Vector6d PIDClass::getErrorVector(const Eigen::Quaterniond &q, const Eige
     Eigen::Vector6d z(6);
     z << x_tilde, nu * q_tilde.vec();
     return z;
+}
+
+void PIDClass::update_params(double _Kx, double _Kxi, double _Kd, std::vector<double> _rG, std::vector<double> _rB,
+                             double _W, double _B, double _c, double _c_i, double _windup_att, double _windup_pos, int _control_mode)
+{
+    Kx = Eigen::Matrix3d::Identity() * _Kx;
+    Kxi = Eigen::Matrix3d::Identity() * _Kxi;
+    Kd = Eigen::Matrix6d::Identity() * _Kd;
+    rg = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(_rG.data(), _rG.size());
+    rb = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(_rB.data(), _rB.size());
+    W = _W;
+    B = _B;
+    c = _c;
+    c_i = _c_i;
+    W_max_att = _windup_att;
+    W_max_pos = _windup_pos;
+    control_mode = _control_mode;
 }
 

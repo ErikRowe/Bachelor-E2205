@@ -16,7 +16,7 @@
 // Control group includes
 #include "controller_package/common.hpp"
 #include "bluerov_interfaces/msg/actuator_input.hpp"
-#include "controller_package/joy_to_action.h"
+#include "controller_package/joy_to_action.hpp"
 #include "controller_package/control_actuator.hpp"
 #include "controller_package/control_PID.hpp"
 #include "controller_package/control_reference.hpp"
@@ -29,7 +29,7 @@ using namespace std::chrono_literals;
 class ControlNode : public rclcpp::Node
 {
     public:
-        ControlNode();        
+        explicit ControlNode(const rclcpp::NodeOptions& options);        
 
     private:
         // Class declarations
@@ -45,6 +45,24 @@ class ControlNode : public rclcpp::Node
         Actuation actuation_;                                                               // Instance of actuation message handler
         ReferenceClass reference_handler_;                                                  // Instance of reference frame handler
         rclcpp::Clock clock_;                                                               // Makes a clock for ros2
+
+        //params
+        double gravitational_force;
+        double buoyancy_weight;
+        double scaling_linear_proportional_gain;
+        double scaling_angular_proportional_gain;
+        double scaling_linear_integral_gain;
+        double scaling_angular_integral_gain;
+        double maximum_integral_windup_attitude;
+        double maximum_integral_windup_position;
+        double scaling_derivative_gain;
+        double scaling_surge;
+        double scaling_sway;
+        double scaling_heave;
+        int control_mode;
+        std::vector<double> centre_of_gravity;
+        std::vector<double> center_of_buoyancy;
+
 
 
         Eigen::Vector3d x = Eigen::Vector3d::Zero();                    //Locally stored position vector
