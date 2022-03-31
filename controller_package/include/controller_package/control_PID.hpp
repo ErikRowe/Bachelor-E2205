@@ -40,6 +40,19 @@ class PIDClass{
         void update_params(double _Kx, double _Kxi, double _Kd, std::vector<double> _rG, std::vector<double> _rB,
                            double _W, double _B, double _c, double _c_i, double _windup_att, double _windup_pos, int _control_mode);
 
+        /**
+         * @brief Uses position and attitude to compute an error vector
+         * 
+         * @param q     Current attitude in quaternion representation
+         * @param q_d   Setpoint attitude in quaternion representation
+         * @param x     Current position in world frame
+         * @param x_d   Setpoint position in world frame
+         *
+         * @return 6x1 vector with position and attitude error
+         */
+        Eigen::Vector6d getErrorVector(const Eigen::Quaterniond &q, const Eigen::Quaterniond &q_d,
+                                       const Eigen::Vector3d &x, const Eigen::Vector3d &x_d);
+
     private:
         /**
          * @brief Calculates proportional gain
@@ -68,18 +81,7 @@ class PIDClass{
         void limit_integral_windup();
 
 
-        /**
-         * @brief Uses position and attitude to compute an error vector
-         * 
-         * @param q     Current attitude in quaternion representation
-         * @param q_d   Setpoint attitude in quaternion representation
-         * @param x     Current position in world frame
-         * @param x_d   Setpoint position in world frame
-         *
-         * @return 6x1 vector with position and attitude error
-         */
-        Eigen::Vector6d getErrorVector(const Eigen::Quaterniond &q, const Eigen::Quaterniond &q_d,
-                                       const Eigen::Vector3d &x, const Eigen::Vector3d &x_d);
+
         //Eigen::Matrix6d integralGain();
 
         /**

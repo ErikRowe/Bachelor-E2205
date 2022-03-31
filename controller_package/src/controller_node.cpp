@@ -27,6 +27,7 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
     act_pub_ = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/actuation", 10);
     timer_ = this->create_wall_timer(10ms, std::bind(&ControlNode::reference_publisher, this));
     PIDTimer_ = this->create_wall_timer(30ms, std::bind(&ControlNode::sample_PID, this));
+    LoggingTimer_ = this->create_wall_timer(30ms, std::bind(&ControlNode::logging, this));
 }
 
 void ControlNode::send_actuation(Eigen::Vector6d tau)
@@ -98,7 +99,14 @@ void ControlNode::sample_PID()
 
     // Run PID
     Eigen::Vector6d tau = PID_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
+    z_logging = PID_.getErrorVector(q, reference_handler_.q_d, x, reference_handler_.x_d);
+    tau_logging = tau;
     moveEntity(tau);
+}
+
+void ControlNode::logging()
+{
+    Logg_.data_logger(tau_logging, z_logging, reference_handler_.x_d);
 }
 
 // Main initiates the node, and keeps it alive

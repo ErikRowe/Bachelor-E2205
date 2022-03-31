@@ -20,6 +20,7 @@
 #include "controller_package/control_actuator.hpp"
 #include "controller_package/control_PID.hpp"
 #include "controller_package/control_reference.hpp"
+#include "controller_package/logging.hpp"
 
 
 
@@ -40,11 +41,15 @@ class ControlNode : public rclcpp::Node
         bluerov_interfaces::msg::ActuatorInput actuation_message_;                          // Actuation message object building
         rclcpp::TimerBase::SharedPtr timer_;                                                // ROS2 Timer for reference publish (WILL BE REMOVED)
         rclcpp::TimerBase::SharedPtr PIDTimer_;                                             // Timer to sample PID
+        rclcpp::TimerBase::SharedPtr LoggingTimer_;                                         // Timer for data logging intervals
         UserJoystickInput joystick_handler_;                                                // Instance of joystick input handler
         PIDClass PID_;                                                                      // Instance of PID logic handler
+        LoggingClass Logg_;                                                                 // Instance of logging to file handler
         Actuation actuation_;                                                               // Instance of actuation message handler
         ReferenceClass reference_handler_;                                                  // Instance of reference frame handler
         rclcpp::Clock clock_;                                                               // Makes a clock for ros2
+        Eigen::Vector6d tau_logging;                                                        // Save tau as a class variable to be used for logging
+        Eigen::Vector6d z_logging;                                                          // Save z as a class vaiable to be used for loggin
 
         //params
         double gravitational_force;
@@ -102,12 +107,12 @@ class ControlNode : public rclcpp::Node
          */
         void sample_PID();
 
-        // /**
-        //  * @brief Callback msg to read global state estimaton
-        //  * 
-        //  * @param msg Contains information regarding velocities, position and attitude
-        //  */
-        // void estimate_callback(const nav_msgs::msg::Odometry msg);
+        
+        /**
+         * @brief Function for logging parameters to files
+         * 
+         */
+        void logging();
 
         
 };
