@@ -1,43 +1,22 @@
 import numpy as np
+import matplotlib.pyplot as plt
+from scipy.spatial.transform import Rotation as R
 from scipy.integrate import odeint
 
 # Eq: Mṽ + C(v)v +D(v)v + g(mu) + g_0 = Tau + Tau_wind + Tau_wave # might be wrong
 
+class Simulator():
+    Mat6x6 = np.zeros((6,6))
+    Mat3x3 = np.zeros((3,3))
 
-def  inertiaMatrix(): # System inertia matrix
-    _m = np.array([[0],
-                  [0],
-                  [0],
-                  [0],
-                  [0],
-                  [0]])
-    return _m
+    def __init__(self):
+        pass
 
-def coriolisMatrix(): # Matrix of coriolis en sentrifugal terms
-    _c = np.array([])
-    return _c
-
-def dampingMatrix(): # Matrix of dissipated damping terms
-    _d = np.array([])
-    return _d
-
-def disturbances():
-    _tau = np.array([[],
-                    [],
-                    [],
-                    [],
-                    [],
-                    []])
-    return _tau
-
-def movementVector(x_n, y_n, z_n, phi_N, theta_n, psi_n):
-    _v = np.array([[x_n],
-                  [y_n],
-                  [z_n],
-                  [phi_N],
-                  [theta_n],
-                  [psi_n]])
-    return _v
+    def create_S_MAT(self, matrix): # Returns a scew symmetric matrix from 3d vector
+        S = np.array([[    0     , -matrix[2],  matrix[1]],
+                      [ matrix[2],    0      , -matrix[0]],
+                      [-matrix[1], matrix[0] ,    0     ]])
+        return S
 
 def blueROV2Heavy():
     M_rigid_body = 0
@@ -54,4 +33,5 @@ def blueROV2Heavy():
     dydt = M_rigid_body * v_dot + C_rigid_body * v + M_a * v_world + C_a * v_world + D_world * v_world * g_nu - tau
 
 if __name__ == "__main__":
-    blueROV2Heavy()
+    sim = Simulator()
+    print(sim.create_S_MAT(sim.Mat3x3))
