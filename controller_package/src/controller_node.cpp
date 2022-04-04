@@ -106,7 +106,8 @@ void ControlNode::sample_PID()
 
 void ControlNode::logging()
 {
-    Logg_.data_logger(tau_logging, z_logging, reference_handler_.x_d);
+    rclcpp::Time time = clock_.now();
+    Logg_.data_logger(tau_logging, z_logging, q, reference_handler_.q_d, x, reference_handler_.x_d, v, time.seconds());
 }
 
 // Main initiates the node, and keeps it alive

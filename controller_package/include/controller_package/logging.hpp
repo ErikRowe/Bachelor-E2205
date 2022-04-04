@@ -5,5 +5,11 @@ using namespace std;
 
 class LoggingClass{
     public:
-        void data_logger(Eigen::Vector6d data1, Eigen::Vector6d data2, Eigen::Vector3d data3);
+
+        /**
+         * @brief 
+         * 
+         */
+        void data_logger(Eigen::Vector6d tau, Eigen::Vector6d z, Eigen::Quaterniond q, Eigen::Quaterniond q_d, 
+                         Eigen::Vector3d x, Eigen::Vector3d x_d, Eigen::Vector6d v, double time);
 };
