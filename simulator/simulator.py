@@ -10,6 +10,8 @@ class Simulator():
     Mat3x3 = np.zeros((3,3))
     Mat4x3 = np.zeros((4,3))
 
+    nu = [1,1,1,1,1,1]
+
     # Constants
     m = 11.5                    # Kg
     W = 112.8                   # Newton
@@ -52,23 +54,26 @@ class Simulator():
     def __init__(self):
         pass
 
-    def create_s_mat(self, vector): # Returns a scew symmetric matrix from 3d vector
-        s = np.array([[    0     , -vector[2],  vector[1]],
-                      [ vector[2],    0      , -vector[0]],
-                      [-vector[1], vector[0] ,    0     ]])
+    def create_s_mat(self, vector): # Returns a scew symmetric matrix from 3d vector(4x1)
+        s = np.array([[    0     , -vector[2][0],  vector[1][0]],
+                      [ vector[2][0],    0      , -vector[0][0]],
+                      [-vector[1][0], vector[0][0] ,    0     ]])
         return s
 
     def create_m_mat(self):
-        mat_m_rb = np.array([[self.m * np.identity(3), - self.m * self.create_s_mat(self.r_g)], # 2x3
-                             [self.m * self.create_s_mat(self.r_g), self.I_0]])
-        test = np.array(np.concatenate((self.m * np.identity(3), - self.m * self.create_s_mat(self.r_g)), axis=1))
-        print(test)
-        mat_m_a = self.added_mass_matrix * np.identity(6)
+        mat_m_rb = np.array(np.concatenate((np.concatenate((self.m * np.identity(3), - self.m * self.create_s_mat(self.r_g)), axis=1),
+                                            np.concatenate((self.m * self.create_s_mat(self.r_g), self.I_0), axis=1)))) # 6x6
+        mat_m_a = self.added_mass_matrix * np.identity(6) # 6x6
         mat_m = mat_m_rb + mat_m_a
         return mat_m
 
-    def create_c_mat(self):
-        pass
+    def create_c_mat(self, mat_m, nu):
+        m11, m12, m21, m22 = self.split(mat_m, 3, 3)
+        mat_c_rb = 0
+        mat_c_a = np.array(np.concatenate((np.concatenate((np.zeros((3,3)), - self.create_s_mat(m11 * nu[1] + m12 * nu[2])), axis=1),
+                                            np.concatenate((- self.create_s_mat(m11 * nu[1] + m12 * nu[2]), self.create_s_mat(m22 * nu[1] + m21 * nu[2])), axis=1))))
+        mat_c = mat_c_rb + mat_c_a
+        return mat_c
 
     def create_d_mat(self):
         pass
@@ -76,8 +81,19 @@ class Simulator():
     def create_r_mat(self):
         pass
     
-        
+    def main(self):
+        m = self.create_m_mat()
+        c = self.create_c_mat(m, self.nu)
+        print(c)
+
+    def split(self, array, nrows, ncols):
+        """Split a matrix into sub-matrices."""
+
+        r, h = array.shape
+        return (array.reshape(h//nrows, nrows, -1, ncols)
+                    .swapaxes(1, 2)
+                    .reshape(-1, nrows, ncols))
 
 if __name__ == "__main__":
     sim = Simulator()
-    t = sim.create_m_mat()
+    sim.main()

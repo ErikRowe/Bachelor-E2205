@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
-from mpl_toolkits.mplot3d import Axes3D
 
 def Combine4(M11, M12, M21, M22):
     return np.array(np.concatenate((np.concatenate((M11, M12), axis=1),
@@ -33,7 +32,7 @@ def D(v):
     return D1 + D2
 
 def Kp(q):
-    return Combine4(np.transpose(R.from_quat(q).as_matrix())*Kx, Zero3x3, Zero3x3, c*I3x3)
+    return Combine4(R.from_quat(q).as_matrix()*Kx, Zero3x3, Zero3x3, c*I3x3)
 
 
 def quatMul(q1, q2):
@@ -75,7 +74,7 @@ def f(zeta):
     z1 = x - x_d
     q_tilde = quatMul(conjugate(q_d), q)
     q_tilde /= np.linalg.norm(q_tilde)
-    z2 = sign(q_tilde[0])*np.array([q_tilde[1], q_tilde[2], q_tilde[3]])
+    z2 = sign(q[0])*np.array([q_tilde[1], q_tilde[2], q_tilde[3]])
     z = np.concatenate([z1, z2])
     zeta11 = np.concatenate([R.from_quat(q).as_matrix(), Zero3x3], axis=1)
     zeta22 = np.concatenate([Zero4x3, 1/2*U(q)], axis=1)
