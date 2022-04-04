@@ -2,7 +2,7 @@ import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
-
+from mpl_toolkits.mplot3d import Axes3D
 
 def CombineMatrix (M11, M12, M21, M22):
     #Combines four nxn matrices to one 2nx2n matrix
@@ -54,7 +54,10 @@ def sign(a):
     return 1 if a >= 0 else -1
 
 def Kp(q):
-    return CombineMatrix(np.transpose(R.from_quat(q).as_matrix())*Kx, O3x3, O3x3, c*I3x3)
+    return CombineMatrix(np.transpose(R.from_quat(q).as_matrix())*Kxp, O3x3, O3x3, cp*I3x3)
+
+def Ki(q):
+    return CombineMatrix(np.transpose(R.from_quat(q).as_matrix())*Kxi, O3x3, O3x3, ci*I3x3)
 
 #Matrices needed inside other matrices
 I3x3 = np.identity(3)
@@ -72,7 +75,7 @@ _M22 = np.array([[40, 0, 0],[0, 80, 0],[0, 0, 80]])
 M = CombineMatrix(_M11,_M12,_M21,_M22)
 
 def model(state,t):
-    global M
+    global M, mode
     x = state[:3]
     q = state[3:7]
     nu = state[7:]
@@ -85,14 +88,21 @@ def model(state,t):
     J21 = np.concatenate([O4x3,1/2*U(q)], axis = 1)
     J = np.concatenate([J11,J21])
     zeta_dot = J@nu
-    nu_dot = np.linalg.inv(M)@(-C(nu)@nu - D(nu)@nu - Kd@nu - Kp(q)@z)
+    if mode == 'PID':
+        nu_dot = np.linalg.inv(M)@(-C(nu)@nu - D(nu)@nu - Kd@nu - Kp(q)@z - Ki(q)@z)
+    elif mode == 'PD':
+        nu_dot = np.linalg.inv(M)@(-C(nu)@nu - D(nu)@nu - Kd@nu - Kp(q)@z)
+    elif mode == 'P':
+        nu_dot = np.linalg.inv(M)@(-C(nu)@nu - D(nu)@nu - Kp(q)@z)
     return np.concatenate([zeta_dot,nu_dot])
 
 
 # Controller parameters
-Kx = 30                     # Position proportional gain
-c = 200                     # Attitude proportional gain
+Kxp = 30                     # Position proportional gain
+cp = 200                     # Attitude proportional gain
 Kd = np.identity((6))       # Derivative gain
+Kxi = 400                   # Position integral gain
+ci = 200                    # Attitude integral gain
 
 ## Simulation parameters
 # Timeaxis
@@ -108,14 +118,27 @@ zeta0 = np.concatenate([x_init, q_init, nu_init])
 x_d = np.array([0,0,0])
 q_d = np.array([1] + [0]*3)
 
+
 # Simulation
+modes = ['P','PD','PID']
+
+mode = modes[2]
 simulation = odeint(model,zeta0,t)
 x = simulation[:,0]
 y = simulation[:,1]
 z = simulation[:,2]
 
 
-# Plot
+## Plot
+
+# # 3D
+# fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+# ax.set_xlabel('x [m]')
+# ax.set_ylabel('y [m]')
+# ax.set_zlabel('z [m]')
+# ax.plot3D(x, y, z)
+
+# 2D
 fig, axs = plt.subplots(1, 3, figsize=(12, 3))
 axs[0].set_ylabel('x [m]')
 axs[1].set_ylabel('y [m]')
@@ -131,4 +154,3 @@ for ax in axs:
 plt.show()
 
 #fig.savefig('/home/elias/Documents/Bachelor/Simuleringer/Plots/Odeint',format = 'eps', dpi = 1200)
-
