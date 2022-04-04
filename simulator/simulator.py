@@ -31,7 +31,7 @@ class Simulator():
     K_pdot = -0.12              # Kg m**2/rad
     M_qdot = -0.12              # Kg m**2/rad
     N_rdot = -0.12              # Kg m**2/rad
-    added_mass_matrix = np.transpose(np.array([[X_udot, Y_vdot, Z_wdot, K_pdot, M_qdot, N_rdot]])) * np.identity(6)
+    added_mass_matrix = np.transpose(np.array([[X_udot, Y_vdot, Z_wdot, K_pdot, M_qdot, N_rdot]]))
 
     X_u = -4.03                 # Ns/m
     N_r = -0.07                 # Ns/m
@@ -61,8 +61,9 @@ class Simulator():
     def create_m_mat(self):
         mat_m_rb = np.array([[self.m * np.identity(3), - self.m * self.create_s_mat(self.r_g)], # 2x3
                              [self.m * self.create_s_mat(self.r_g), self.I_0]])
-        print(mat_m_rb)
-        mat_m_a = self.added_mass_matrix
+        test = np.array(np.concatenate((self.m * np.identity(3), - self.m * self.create_s_mat(self.r_g)), axis=1))
+        print(test)
+        mat_m_a = self.added_mass_matrix * np.identity(6)
         mat_m = mat_m_rb + mat_m_a
         return mat_m
 
