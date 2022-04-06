@@ -20,8 +20,8 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
 {
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
         "joy", 10, std::bind(&ControlNode::joystick_callback, this, _1));
-    //state_estim_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-    //  "state_estimate", 10, std::bind(&ControlNode::estimate_callback, this, _1));
+    state_estim_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+      "state_estimate", 10, std::bind(&ControlNode::estimate_callback, this, _1));
 
     ref_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/reference/pose", 10);
     act_pub_ = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/actuation", 10);
@@ -48,6 +48,16 @@ void ControlNode::joystick_callback(const sensor_msgs::msg::Joy msg)
 {
     joystick_handler_.joystickToActions(msg.axes, msg.buttons);
     reference_handler_.update_setpoint(&joystick_handler_.movement, &joystick_handler_.active_buttons, q, x);
+}
+
+void ControlNode::estimate_callback(const nav_msgs::msg::Odometry msg){
+    auto pos = msg.pose.pose.position;
+    auto att = msg.pose.pose.orientation;
+    auto lin = msg.twist.twist.linear;
+    auto ang = msg.twist.twist.angular;
+    x = Eigen::Vector3d(pos.x, pos.y, pos.z);
+    q = Eigen::Quaterniond(att.w, att.x, att.y, att.z);
+    v = Eigen::Vector6d(lin.x, lin.y, lin.z, ang.x, ang.y, ang.z);
 }
 
 void ControlNode::moveEntity(Eigen::Vector6d tau)
@@ -98,7 +108,13 @@ void ControlNode::sample_PID()
 
     // Run PID
     Eigen::Vector6d tau = PID_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
-    moveEntity(tau);
+    // tau[0] = joystick_handler_.movement[0];
+    // tau[1] = joystick_handler_.movement[1];
+    // tau[2] = joystick_handler_.movement[2];
+    tau[0] = 0;
+    tau[1] = 0;
+    tau[2] = 0;
+    send_actuation(tau);
 }
 
 // Main initiates the node, and keeps it alive

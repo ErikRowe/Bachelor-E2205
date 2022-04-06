@@ -33,7 +33,7 @@ class ControlNode : public rclcpp::Node
 
     private:
         // Class declarations
-        //rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;        // Subscribes to state estimation
+        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;          // Subscribes to state estimation
         rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr ref_pub_;             // Publishes current state (WILL BE REMOVED)
         rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;                    // Subscribes to joy input
         rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_;     // Publishes actuation message
@@ -102,12 +102,12 @@ class ControlNode : public rclcpp::Node
          */
         void sample_PID();
 
-        // /**
-        //  * @brief Callback msg to read global state estimaton
-        //  * 
-        //  * @param msg Contains information regarding velocities, position and attitude
-        //  */
-        // void estimate_callback(const nav_msgs::msg::Odometry msg);
+        /**
+         * @brief Callback msg to read global state estimaton
+         * 
+         * @param msg Contains information regarding velocities, position and attitude
+         */
+        void estimate_callback(const nav_msgs::msg::Odometry msg);
 
         
 };
