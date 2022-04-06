@@ -64,9 +64,6 @@ I3x3 = np.identity(3)
 O3x3 = np.zeros((3,3))
 O4x3 = np.zeros((4,3))
 
-#Zero3x3 = np.array([[0]*3]*3)
-#Zero4x3 = np.array([[0]*3]*4)
-
 #Interia matrix is constatnt, values from Fossen 1994
 _M11 = np.array([[215, 0, 0],[0, 265, 0],[0, 0, 265]])
 _M12 = O3x3
@@ -98,31 +95,31 @@ def model(state,t):
 
 
 # Controller parameters
-Kxp = 30                     # Position proportional gain
-cp = 200                     # Attitude proportional gain
-Kd = np.identity((6))       # Derivative gain
-Kxi = 400                   # Position integral gain
+Kxp = 10000                    # Position proportional gain
+cp = 2000                     # Attitude proportional gain
+Kd = 3000*np.identity((6))       # Derivative gain
+Kxi = 50                   # Position integral gain
 ci = 200                    # Attitude integral gain
 
 ## Simulation parameters
 # Timeaxis
-t = np.linspace(0,30,1000)
+t = np.linspace(0,5,1000)
 
 # Inintal values
-x_init = np.array([10, 10, 10])
-q_init = np.array([0.5]*4)
+x_init = np.array([0, 0, 0])
+q_init = np.array([1] + [0]*3)
 nu_init = np.array([0]*6)
 zeta0 = np.concatenate([x_init, q_init, nu_init])
 
 # Desired endpoint and orientation
-x_d = np.array([0,0,0])
+x_d = np.array([10,10,10])
 q_d = np.array([1] + [0]*3)
-
+print(q_d)
 
 # Simulation
 modes = ['P','PD','PID']
 
-mode = modes[2]
+mode = modes[1]
 simulation = odeint(model,zeta0,t)
 x = simulation[:,0]
 y = simulation[:,1]
@@ -131,11 +128,14 @@ z = simulation[:,2]
 
 ## Plot
 
-# # 3D
+# 3D
 # fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 # ax.set_xlabel('x [m]')
 # ax.set_ylabel('y [m]')
 # ax.set_zlabel('z [m]')
+# ax.set_xlim([0,10])
+# ax.set_ylim([0,10])
+# ax.set_zlim([0,10])
 # ax.plot3D(x, y, z)
 
 # 2D
@@ -150,7 +150,7 @@ axs[2].plot(t, z)
 for ax in axs: 
     ax.grid()
     ax.set_xlabel('t [s]')
-    ax.set_ylim([-1, 11])
+    ax.set_ylim([0, 15])
 plt.show()
 
-#fig.savefig('/home/elias/Documents/Bachelor/Simuleringer/Plots/Odeint',format = 'eps', dpi = 1200)
+#fig.savefig('/home/elias/Documents/Bachelor/Simuleringer/Plots/IN3D.eps',format = 'eps', dpi = 1200)
