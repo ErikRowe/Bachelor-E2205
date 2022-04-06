@@ -5,14 +5,16 @@ from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from bluerov_interfaces.msg import ActuatorInput
 
-from bluerov2_comm import BlueROV2Comm
-
+from pymavlink import mavutil
+from pymavlink import quaternion
 
 class BlueROV2CommNode(Node):
 
     def __init__(self):
         super().__init__('bluerov2_comm_node')
         self.odomPub_ = self.create_publisher(Odometry, 'state_estimate', 10)
+        self.actuatorSub_ = self.create_subscription(ActuatorInput, 'actuation', self.actuation_callback, 10)
+        self.actuatorSub_  # prevent unused variable warning
         timer_period = 0.1  # seconds
         self.state_update_timer = self.create_timer(timer_period, self.update_state)
         self.comm = BlueROV2Comm()
@@ -24,21 +26,87 @@ class BlueROV2CommNode(Node):
     def publish_state(self):
         # Publish Odom msg
         odom_msg = Odometry()
-        odom_msg.header.stamp = self.get_clock().now()
+        odom_msg.header.stamp = self.get_clock().now().to_msg()
         odom_msg.header.frame_id = "/map"
         odom_msg.child_frame_id = "/base_link"
-        odom_msg.pose.pose.position.x = 0
-        odom_msg.pose.pose.position.y = 0
-        odom_msg.pose.pose.position.z = 0
+        odom_msg.pose.pose.position.x = 0.0
+        odom_msg.pose.pose.position.y = 0.0
+        odom_msg.pose.pose.position.z = 0.0
         
-        odom_msg.pose.pose.orientation.w = self.comm.attitude[0]
-        odom_msg.pose.pose.orientation.x = self.comm.attitude[1]
-        odom_msg.pose.pose.orientation.y = self.comm.attitude[2]
-        odom_msg.pose.pose.orientation.z = self.comm.attitude[3]
-        self.odomPub.publish(odom_msg)
+        odom_msg.pose.pose.orientation.w = float(self.comm.attitude[0])
+        odom_msg.pose.pose.orientation.x = float(self.comm.attitude[1])
+        odom_msg.pose.pose.orientation.y = float(self.comm.attitude[2])
+        odom_msg.pose.pose.orientation.z = float(self.comm.attitude[3])
+        self.odomPub_.publish(odom_msg)
     
-    def subscribe_actuation(self):
-        return
+    def actuation_callback(self, msg):
+        self.get_logger().info('I heard: "%f"' % msg.thrust1)
+        #self.comm.set_rc_channel_pwm(msg)
+
+
+
+
+class BlueROV2Comm:
+
+    def __init__(self):
+        # Disable "Bare exception" warning
+        # pylint: disable=W0702
+
+        # Create the connection
+        #  If using a companion computer
+        #  the default connection is available
+        #  at ip 192.168.2.1 and the port 14550
+        # Note: The connection is done with 'udpin' and not 'udpout'.
+        #  You can check in http:192.168.2.2:2770/mavproxy that the communication made for 14550
+        #  uses a 'udpbcast' (client) and not 'udpin' (server).
+        #  If you want to use QGroundControl in parallel with your python script,
+        #  it's possible to add a new output port in http:192.168.2.2:2770/mavproxy as a new line.
+        #  E.g: --out udpbcast:192.168.2.255:yourport
+        self.master = mavutil.mavlink_connection('udpin:0.0.0.0:15000')
+
+        # Make sure the connection is valid
+        #self.master.wait_heartbeat()
+
+        self.init_stored_vars()
+
+    def init_stored_vars(self):
+        self.attitude = quaternion.QuaternionBase()
+        #self.position = [0]*3
+        self.velocity = [0]*6
+        self.previous_time = None
+
+
+    def read_data(self):
+        msg = self.master.recv_match()
+        if not msg:
+            return
+        if msg.get_type() == 'ATTITUDE':
+            msg_dict = msg.to_dict()
+            self.velocity[3:] = [msg_dict['rollspeed'], msg_dict['pitchspeed'], msg_dict['yawspeed']]
+            self.attitude = quaternion.QuaternionBase([msg_dict['roll'], msg_dict['pitch'], msg_dict['yaw']])
+        # if msg.get_type() == 'GLOBAL_POSITION_INT':
+        #     msg_dict = msg.to_dict()
+        #     self.velocity[:3] = [msg_dict['vx'], msg_dict['vy'], msg_dict['vz']]
+        #     self.estimate_position(msg_dict['time_boot_ms'])
+
+    def estimate_position(self, current_time):
+        if self.previous_time == None:
+            self.previous_time = current_time
+        dt = (current_time - self.previous_time) / 10e3
+        self.position = [round(self.position[i] + self.velocity[i]*dt, 2) for i in range(3)]
+        self.previous_time = current_time
+
+
+    def set_rc_channel_pwm(self, pwm_list=[1500]*8):
+        rc_channel_values = [65535 for _ in range(18)]
+        for channel_id, pwm in enumerate(pwm_list):
+            rc_channel_values[channel_id - 1] = pwm
+            
+        self.master.mav.rc_channels_override_send(
+            self.master.target_system,                # target_system
+            self.master.target_component,             # target_component
+            *rc_channel_values)                       # RC channel list, in microseconds.
+
 
 
 def main(args=None):

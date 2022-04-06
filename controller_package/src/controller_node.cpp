@@ -57,7 +57,7 @@ void ControlNode::estimate_callback(const nav_msgs::msg::Odometry msg){
     auto ang = msg.twist.twist.angular;
     x = Eigen::Vector3d(pos.x, pos.y, pos.z);
     q = Eigen::Quaterniond(att.w, att.x, att.y, att.z);
-    v = Eigen::Vector6d(lin.x, lin.y, lin.z, ang.x, ang.y, ang.z);
+    v << lin.x, lin.y, lin.z, ang.x, ang.y, ang.z;
 }
 
 void ControlNode::moveEntity(Eigen::Vector6d tau)

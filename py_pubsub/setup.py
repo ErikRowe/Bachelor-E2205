@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'bluerov2_communication'
+package_name = 'py_pubsub'
 
 setup(
     name=package_name,
@@ -13,14 +13,13 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='simenvh',
-    maintainer_email='simen_vh@live.no',
+    maintainer='elias',
+    maintainer_email='elias.olsen.almenningen@gmail.com',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'bluerov2_node = bluerov2_communication.bluerov2_comm_node:main',
         ],
     },
 )
