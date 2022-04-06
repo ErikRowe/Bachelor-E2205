@@ -94,6 +94,8 @@ def model(state,t):
         nu_dot = np.linalg.inv(M)@(-C(nu)@nu - D(nu)@nu - Kd@nu - Kp(q)@z)
     elif mode == 'P':
         nu_dot = np.linalg.inv(M)@(-C(nu)@nu - D(nu)@nu - Kp(q)@z)
+
+    print(zeta_dot)
     return np.concatenate([zeta_dot,nu_dot])
 
 
@@ -123,34 +125,35 @@ q_d = np.array([1] + [0]*3)
 modes = ['P','PD','PID']
 
 mode = modes[2]
-simulation = odeint(model,zeta0,t)
-x = simulation[:,0]
-y = simulation[:,1]
-z = simulation[:,2]
+print(model(zeta0,t))
+# simulation = odeint(model,zeta0,t)
+# x = simulation[:,0]
+# y = simulation[:,1]
+# z = simulation[:,2]
 
 
-## Plot
+# ## Plot
 
-# # 3D
-# fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-# ax.set_xlabel('x [m]')
-# ax.set_ylabel('y [m]')
-# ax.set_zlabel('z [m]')
-# ax.plot3D(x, y, z)
+# # # 3D
+# # fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+# # ax.set_xlabel('x [m]')
+# # ax.set_ylabel('y [m]')
+# # ax.set_zlabel('z [m]')
+# # ax.plot3D(x, y, z)
 
-# 2D
-fig, axs = plt.subplots(1, 3, figsize=(12, 3))
-axs[0].set_ylabel('x [m]')
-axs[1].set_ylabel('y [m]')
-axs[2].set_ylabel('z [m]')
-axs[0].plot(t, x)
-axs[1].plot(t, y)
-axs[2].plot(t, z)
+# # 2D
+# fig, axs = plt.subplots(1, 3, figsize=(12, 3))
+# axs[0].set_ylabel('x [m]')
+# axs[1].set_ylabel('y [m]')
+# axs[2].set_ylabel('z [m]')
+# axs[0].plot(t, x)
+# axs[1].plot(t, y)
+# axs[2].plot(t, z)
 
-for ax in axs: 
-    ax.grid()
-    ax.set_xlabel('t [s]')
-    ax.set_ylim([-1, 11])
-plt.show()
+# for ax in axs: 
+#     ax.grid()
+#     ax.set_xlabel('t [s]')
+#     ax.set_ylim([-1, 11])
+# plt.show()
 
-#fig.savefig('/home/elias/Documents/Bachelor/Simuleringer/Plots/Odeint',format = 'eps', dpi = 1200)
+# #fig.savefig('/home/elias/Documents/Bachelor/Simuleringer/Plots/Odeint',format = 'eps', dpi = 1200)
