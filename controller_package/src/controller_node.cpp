@@ -108,9 +108,9 @@ void ControlNode::sample_PID()
 
     // Run PID
     Eigen::Vector6d tau = PID_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
-    // tau[0] = joystick_handler_.movement[0];
-    // tau[1] = joystick_handler_.movement[1];
-    // tau[2] = joystick_handler_.movement[2];
+    // tau[0] = joystick_handler_.movement[0] * 10;
+    // tau[1] = joystick_handler_.movement[1] * 10;
+    // tau[2] = joystick_handler_.movement[2] * 10;
     tau[0] = 0;
     tau[1] = 0;
     tau[2] = 0;

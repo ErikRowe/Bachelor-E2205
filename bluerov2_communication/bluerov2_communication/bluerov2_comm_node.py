@@ -8,6 +8,7 @@ from bluerov_interfaces.msg import ActuatorInput
 from pymavlink import mavutil
 from pymavlink import quaternion
 
+
 class BlueROV2CommNode(Node):
 
     def __init__(self):
@@ -40,9 +41,18 @@ class BlueROV2CommNode(Node):
         self.odomPub_.publish(odom_msg)
     
     def actuation_callback(self, msg):
-        self.get_logger().info('I heard: "%f"' % msg.thrust1)
-        #self.comm.set_rc_channel_pwm(msg)
+        pwm_signals = [msg.thrust1, msg.thrust2, msg.thrust3, msg.thrust4, msg.thrust5, msg.thrust6, msg.thrust7, msg.thrust8]
+        result = []
+        for signal in pwm_signals:
+            result.append((int)(1500 + 40 * signal))
+        
+        rc_channel_values = [65535 for _ in range(18)]
+        for channel_id, pwm in enumerate(result):
+            rc_channel_values[channel_id] = pwm
 
+        #for x in rc_channel_values:
+        #    self.get_logger().info('Publishing: "%i"' % x)
+        self.comm.set_rc_channel_pwm(rc_channel_values)
 
 
 
@@ -65,7 +75,7 @@ class BlueROV2Comm:
         self.master = mavutil.mavlink_connection('udpin:0.0.0.0:15000')
 
         # Make sure the connection is valid
-        #self.master.wait_heartbeat()
+        self.master.wait_heartbeat()
 
         self.init_stored_vars()
 
@@ -97,15 +107,13 @@ class BlueROV2Comm:
         self.previous_time = current_time
 
 
-    def set_rc_channel_pwm(self, pwm_list=[1500]*8):
-        rc_channel_values = [65535 for _ in range(18)]
-        for channel_id, pwm in enumerate(pwm_list):
-            rc_channel_values[channel_id - 1] = pwm
+    def set_rc_channel_pwm(self, rc_channel_values):
             
         self.master.mav.rc_channels_override_send(
             self.master.target_system,                # target_system
             self.master.target_component,             # target_component
             *rc_channel_values)                       # RC channel list, in microseconds.
+
 
 
 
