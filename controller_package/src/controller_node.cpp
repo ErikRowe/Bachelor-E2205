@@ -27,7 +27,7 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
     act_pub_ = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/actuation", 10);
     timer_ = this->create_wall_timer(10ms, std::bind(&ControlNode::reference_publisher, this));
     PIDTimer_ = this->create_wall_timer(30ms, std::bind(&ControlNode::sample_PID, this));
-    LoggingTimer_ = this->create_wall_timer(30ms, std::bind(&ControlNode::logging, this));
+    LoggingTimer_ = this->create_wall_timer(500ms, std::bind(&ControlNode::logging, this));
 }
 
 void ControlNode::send_actuation(Eigen::Vector6d tau)
@@ -49,6 +49,7 @@ void ControlNode::joystick_callback(const sensor_msgs::msg::Joy msg)
 {
     joystick_handler_.joystickToActions(msg.axes, msg.buttons);
     reference_handler_.update_setpoint(&joystick_handler_.movement, &joystick_handler_.active_buttons, q, x);
+    joy_axes_logging = msg.axes;
 }
 
 void ControlNode::moveEntity(Eigen::Vector6d tau)
@@ -107,7 +108,7 @@ void ControlNode::sample_PID()
 void ControlNode::logging()
 {
     rclcpp::Time time = clock_.now();
-    Logg_.data_logger(tau_logging, z_logging, q, reference_handler_.q_d, x, reference_handler_.x_d, v, time.seconds());
+    Logg_.data_logger(tau_logging, z_logging, q, reference_handler_.q_d, x, reference_handler_.x_d, v, joy_axes_logging, time.seconds());
 }
 
 // Main initiates the node, and keeps it alive

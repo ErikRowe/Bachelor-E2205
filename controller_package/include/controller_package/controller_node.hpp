@@ -49,7 +49,8 @@ class ControlNode : public rclcpp::Node
         ReferenceClass reference_handler_;                                                  // Instance of reference frame handler
         rclcpp::Clock clock_;                                                               // Makes a clock for ros2
         Eigen::Vector6d tau_logging;                                                        // Save tau as a class variable to be used for logging
-        Eigen::Vector6d z_logging;                                                          // Save z as a class vaiable to be used for loggin
+        Eigen::Vector6d z_logging;                                                          // Save z as a class variable to be used for logging
+        std::vector<float> joy_axes_logging;                                                // Save axes inputs as a class variable to be used for logging
 
         //params
         double gravitational_force;
