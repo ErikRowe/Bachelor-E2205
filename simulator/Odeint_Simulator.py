@@ -121,41 +121,6 @@ print(q_d)
 # Simulation
 modes = ['P','PD','PID']
 
-<<<<<<< HEAD
-mode = modes[2]
-print(model(zeta0,t))
-# simulation = odeint(model,zeta0,t)
-# x = simulation[:,0]
-# y = simulation[:,1]
-# z = simulation[:,2]
-
-
-# ## Plot
-
-# # # 3D
-# # fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-# # ax.set_xlabel('x [m]')
-# # ax.set_ylabel('y [m]')
-# # ax.set_zlabel('z [m]')
-# # ax.plot3D(x, y, z)
-
-# # 2D
-# fig, axs = plt.subplots(1, 3, figsize=(12, 3))
-# axs[0].set_ylabel('x [m]')
-# axs[1].set_ylabel('y [m]')
-# axs[2].set_ylabel('z [m]')
-# axs[0].plot(t, x)
-# axs[1].plot(t, y)
-# axs[2].plot(t, z)
-
-# for ax in axs: 
-#     ax.grid()
-#     ax.set_xlabel('t [s]')
-#     ax.set_ylim([-1, 11])
-# plt.show()
-
-# #fig.savefig('/home/elias/Documents/Bachelor/Simuleringer/Plots/Odeint',format = 'eps', dpi = 1200)
-=======
 mode = modes[1]
 simulation = odeint(model,zeta0,t)
 x = simulation[:,0]
@@ -191,4 +156,3 @@ for ax in axs:
 plt.show()
 
 #fig.savefig('/home/elias/Documents/Bachelor/Simuleringer/Plots/IN3D.eps',format = 'eps', dpi = 1200)
->>>>>>> c87dc6e985c3088b760260f0d61a53d0c39641d8

@@ -1,18 +1,17 @@
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as Rot
 from scipy.integrate import odeint
 
-class Simulator():
-
-    nu = [1,1,1,1,1,1]         
-    Kxp = 30    # Scaling of linear proportional gain
+class Simulator():        
+    Kxp = 30   # Scaling of linear proportional gain
     cp = 200    # Scaling constant for angular proportional gain
-    Kd = np.identity(6)
+    Kd = np.identity(6)*6
 
-    x_init = np.array([0, 0, 0])    # Position
-    q_init = np.array([1] + [0]*3)  # Quaternion representing orientation
-    nu_init = np.array([1]*6)   # [v, w] linear and angular velocities
+    x_init = np.array([0., 0., 0.])    # Position
+    q_init = np.array([1.] + [0.]*3)  # Quaternion representing orientation
+    nu_init = np.array([0.]*6)   # [v, w] linear and angular velocities
     zeta0 = np.concatenate([x_init, q_init, nu_init])
     t = np.linspace(0,5,100)
     x_d = np.array([10,10,10])
@@ -60,7 +59,8 @@ class Simulator():
 
 
     def __init__(self):
-        pass
+        self.M_matrix = self.create_m_mat() # Inertia matrix
+        self.main()
 
     def create_jacobi_mat(self, q):
         u = self.create_u_mat(q) # Coordinate transformation matrix
@@ -72,8 +72,8 @@ class Simulator():
         return j
 
     def create_s_mat(self, vector): # Returns a scew symmetric matrix from 3d vector(3x1)
-        s = np.array([[    0     , -vector[2][0],  vector[1][0]],
-                      [ vector[2][0],    0      , -vector[0][0]],
+        s = np.array([[    0        , -vector[2][0],  vector[1][0]],
+                      [ vector[2][0],    0         , -vector[0][0]],
                       [-vector[1][0], vector[0][0] ,    0     ]])
         return s
 
@@ -111,7 +111,15 @@ class Simulator():
         mat_d_l = -self.linear_dampening_matrix * np.identity(6)
         mat_d_q = -(self.quadratic_dampening_matrix * np.identity(6))@(abs(np.transpose(np.array([[nu[0], nu[1], nu[2], nu[3], nu[4], nu[5]]]))*np.identity(6)))
         mat_d = mat_d_l + mat_d_q
+        print(mat_d)
         return mat_d
+
+    def D(self, nu):
+        DL = -np.diag((self.X_u, self.Y_v, self.Z_w, self.K_p, self.M_q, self.N_r))
+        DNL = -np.diag((self.X_u_abs*abs(nu[0]), self.Y_v_abs*abs(nu[1]), self.Z_w_abs*abs(
+            nu[2]), self.K_p_abs*abs(nu[3]), self.M_q_abs*abs(nu[4]), self.N_r_abs*abs(nu[5])))
+        print(DL+DNL)
+        return DL + DNL
 
     def create_u_mat(self, q):
         real, imag = self.split_real_imag(q)
@@ -183,37 +191,35 @@ class Simulator():
         nu = state[7:]
 
         q_tilde = self.quaternion_multiplication(self.conjugate(self.q_d),q)
-        q_tilde /= np.linalg.norm(q_tilde)  # = q_tilde/norm(q_tilde)
+        q_tilde /= np.linalg.norm(q_tilde)  # = q_tilde/norm(q_tilde) self.normalize(q_tilde)
 
         x_tilde = x - self.x_d      # x_tilde = current_x - desired_x
         z = self.create_z_mat(x_tilde, q_tilde)    # Error vector
+        c = self.create_c_mat(self.M_matrix, nu)    # Coriolis and Centrifugal matrix
+        d = self.create_d_mat(nu)   # Dampening matrix
+        dd = self.D(nu)
+
+        nu = np.transpose([nu])
 
         # epsilon_dot
         jacobi = self.create_jacobi_mat(q) # 
-        epsilon_dot = jacobi@np.transpose([nu])
+        epsilon_dot = jacobi@nu # @np.transpose([nu])
 
         # nu_dot
-        Kp = self.Kp(q)
-        m = self.create_m_mat() # Inertia matrix
-        c = self.create_c_mat(m, nu)    # Coriolis and Centrifugal matrix
-        d = self.create_d_mat(nu)   # Dampening matrix
-        nu = np.transpose([nu])
-        nu_dot = np.linalg.inv(m)@(-self.Kd@nu - Kp@z - c@nu + d@nu)
-
-        nu_dot = np.transpose(nu_dot)
-        epsilon_dot = np.transpose(nu_dot)
-        print(nu_dot)
-        test = np.concatenate((epsilon_dot, nu_dot),axis=0)
-        print(np.transpose(test))
-
-        return np.transpose(np.concatenate((epsilon_dot, nu_dot),axis=0))
+        Kp = self.Kp(q)        
+        nu_dot = np.linalg.inv(self.M_matrix)@(-self.Kd@nu - Kp@z - c@nu - d@nu)
+        
+        return np.transpose(np.concatenate((epsilon_dot, nu_dot)))[0] #np.concatenate([epsilon_dot, nu_dot])
 
     def main(self):
-        test = self.simulate(self.zeta0, self.t)
-        # simulation = odeint(self.simulate,self.zeta0, self.t)
-        # x = simulation[:,0]
-        # y = simulation[:,1]
-        # z = simulation[:,2]
+        initial_conditions = self.zeta0
+        t = np.linspace(0,15,1000)
+        sim = self.simulate(initial_conditions, t)
+        # simulation = odeint(self.simulate,initial_conditions, t)
+
+        # x = simulation[:, 0]
+        # y = simulation[:, 1]
+        # z = simulation[:, 2]
 
         # # 2D
         # fig, axs = plt.subplots(1, 3, figsize=(12, 3))
@@ -224,13 +230,13 @@ class Simulator():
         # axs[1].plot(t, y)
         # axs[2].plot(t, z)
 
-        # for ax in axs: 
+        # for ax in axs:
         #     ax.grid()
         #     ax.set_xlabel('t [s]')
-        #     ax.set_ylim([-1, 11])
+        #     ax.set_ylim([-5, 15])
         # plt.show()
         
 
 if __name__ == "__main__":
     sim = Simulator()
-    sim.main()
+    #sim.main()
