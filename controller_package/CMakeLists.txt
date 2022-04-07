@@ -22,6 +22,7 @@ add_executable(controller_node
   src/joy_to_action.cpp
   src/control_PID.cpp
   src/control_reference.cpp
+  src/logging.cpp
 )
 
 set(dependencies

@@ -5,7 +5,7 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
       gravitational_force(declare_parameter<double>("G_force", 1.0)),
       buoyancy_weight(declare_parameter<double>("Buoancy_and_Weight", 1.0)),
       scaling_linear_proportional_gain(declare_parameter<double>("Proportional_gain_linear", 5.0)),
-      scaling_angular_proportional_gain(declare_parameter<double>("Proportional_gain_angular", 10.0)),
+      scaling_angular_proportional_gain(declare_parameter<double>("Proportional_gain_angular", 1.0)),
       scaling_linear_integral_gain(declare_parameter<double>("Integral_gain_linear", 5.0)),
       scaling_angular_integral_gain(declare_parameter<double>("Integral_gain_angular", 10.0)),
       maximum_integral_windup_attitude(declare_parameter<double>("Windup_max_attitude", 1.0)),
@@ -27,20 +27,21 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
     act_pub_ = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/actuation", 10);
     timer_ = this->create_wall_timer(10ms, std::bind(&ControlNode::reference_publisher, this));
     PIDTimer_ = this->create_wall_timer(30ms, std::bind(&ControlNode::sample_PID, this));
+    LoggingTimer_ = this->create_wall_timer(500ms, std::bind(&ControlNode::logging, this));
 }
 
 void ControlNode::send_actuation(Eigen::Vector6d tau)
 {
-  Eigen::Vector8d thrusters_ = actuation_.build_actuation(tau);
+  //Eigen::Vector8d thrusters_ = actuation_.build_actuation(tau);
   actuation_message_.header.stamp = clock_.now();
-  actuation_message_.thrust1 = thrusters_(0);
-  actuation_message_.thrust2 = thrusters_(1);
-  actuation_message_.thrust3 = thrusters_(2);
-  actuation_message_.thrust4 = thrusters_(3);
-  actuation_message_.thrust5 = thrusters_(4);
-  actuation_message_.thrust6 = thrusters_(5);
-  actuation_message_.thrust7 = thrusters_(6);
-  actuation_message_.thrust8 = thrusters_(7);
+  actuation_message_.thrust1 = tau(0);
+  actuation_message_.thrust2 = tau(1);
+  actuation_message_.thrust3 = tau(2);
+  actuation_message_.thrust4 = tau(3);
+  actuation_message_.thrust5 = tau(4);
+  actuation_message_.thrust6 = tau(5);
+  actuation_message_.thrust7 = 0;
+  actuation_message_.thrust8 = 0;
   act_pub_->publish(actuation_message_);
 }
 
@@ -48,6 +49,7 @@ void ControlNode::joystick_callback(const sensor_msgs::msg::Joy msg)
 {
     joystick_handler_.joystickToActions(msg.axes, msg.buttons);
     reference_handler_.update_setpoint(&joystick_handler_.movement, &joystick_handler_.active_buttons, q, x);
+    joy_axes_logging = msg.axes;
 }
 
 void ControlNode::estimate_callback(const nav_msgs::msg::Odometry msg){
@@ -108,13 +110,21 @@ void ControlNode::sample_PID()
 
     // Run PID
     Eigen::Vector6d tau = PID_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
-    // tau[0] = joystick_handler_.movement[0] * 10;
-    // tau[1] = joystick_handler_.movement[1] * 10;
-    // tau[2] = joystick_handler_.movement[2] * 10;
-    tau[0] = 0;
-    tau[1] = 0;
-    tau[2] = 0;
+    tau[0] = joystick_handler_.movement[0] * 10;
+    tau[1] = joystick_handler_.movement[1] * 10;
+    tau[2] = joystick_handler_.movement[2] * 10;
+    tau[3] = joystick_handler_.movement[3] * 10;
+    tau[4] = joystick_handler_.movement[4] * 10;
+    tau[5] = joystick_handler_.movement[5] * 10;
     send_actuation(tau);
+    z_logging = PID_.getErrorVector(q, reference_handler_.q_d, x, reference_handler_.x_d);
+    tau_logging = tau;
+}
+
+void ControlNode::logging()
+{
+    rclcpp::Time time = clock_.now();
+    Logg_.data_logger(tau_logging, z_logging, q, reference_handler_.q_d, x, reference_handler_.x_d, v, joy_axes_logging, time.seconds());
 }
 
 // Main initiates the node, and keeps it alive

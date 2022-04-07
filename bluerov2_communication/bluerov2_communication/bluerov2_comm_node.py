@@ -4,6 +4,7 @@ from rclpy.node import Node
 
 from nav_msgs.msg import Odometry
 from bluerov_interfaces.msg import ActuatorInput
+from sensor_msgs.msg import Joy
 
 from pymavlink import mavutil
 from pymavlink import quaternion
@@ -14,9 +15,10 @@ class BlueROV2CommNode(Node):
     def __init__(self):
         super().__init__('bluerov2_comm_node')
         self.odomPub_ = self.create_publisher(Odometry, 'state_estimate', 10)
+        self.joySub_ = self.create_subscription(Joy, 'joy', self.joystick_callback, 10)
         self.actuatorSub_ = self.create_subscription(ActuatorInput, 'actuation', self.actuation_callback, 10)
         self.actuatorSub_  # prevent unused variable warning
-        timer_period = 0.1  # seconds
+        timer_period = 0.001  # seconds
         self.state_update_timer = self.create_timer(timer_period, self.update_state)
         self.comm = BlueROV2Comm()
 
@@ -41,11 +43,11 @@ class BlueROV2CommNode(Node):
         self.odomPub_.publish(odom_msg)
     
     def actuation_callback(self, msg):
-        pwm_signals = [msg.thrust1, msg.thrust2, msg.thrust3, msg.thrust4, msg.thrust5, msg.thrust6, msg.thrust7, msg.thrust8]
+        pwm_signals = [-msg.thrust5, msg.thrust4, msg.thrust3, -msg.thrust6, msg.thrust1, -msg.thrust2]
         result = []
         for signal in pwm_signals:
-            result.append((int)(1500 + 40 * signal))
-        
+            result.append((int)(1500 + 20 * signal))
+
         rc_channel_values = [65535 for _ in range(18)]
         for channel_id, pwm in enumerate(result):
             rc_channel_values[channel_id] = pwm
@@ -53,6 +55,14 @@ class BlueROV2CommNode(Node):
         #for x in rc_channel_values:
         #    self.get_logger().info('Publishing: "%i"' % x)
         self.comm.set_rc_channel_pwm(rc_channel_values)
+
+    def joystick_callback(self, msg):
+        if msg.buttons[1]:
+            self.comm.disarm()
+            return
+        if msg.buttons[0]: self.comm.arm()
+        
+
 
 
 
@@ -72,6 +82,7 @@ class BlueROV2Comm:
         #  If you want to use QGroundControl in parallel with your python script,
         #  it's possible to add a new output port in http:192.168.2.2:2770/mavproxy as a new line.
         #  E.g: --out udpbcast:192.168.2.255:yourport
+        
         self.master = mavutil.mavlink_connection('udpin:0.0.0.0:15000')
 
         # Make sure the connection is valid
@@ -85,6 +96,22 @@ class BlueROV2Comm:
         self.velocity = [0]*6
         self.previous_time = None
 
+    def arm(self):
+        self.master.mav.command_long_send(
+        self.master.target_system,
+        self.master.target_component,
+        mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+        0,
+        1, 0, 0, 0, 0, 0, 0)
+
+    def disarm(self):
+        self.master.mav.command_long_send(
+        self.master.target_system,
+        self.master.target_component,
+        mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+        0,
+        0, 0, 0, 0, 0, 0, 0)
+
 
     def read_data(self):
         msg = self.master.recv_match()
@@ -92,8 +119,15 @@ class BlueROV2Comm:
             return
         if msg.get_type() == 'ATTITUDE':
             msg_dict = msg.to_dict()
-            self.velocity[3:] = [msg_dict['rollspeed'], msg_dict['pitchspeed'], msg_dict['yawspeed']]
+            
+            self.velocity[3] = msg_dict['rollspeed']
+            self.velocity[4] = msg_dict['pitchspeed']
+            self.velocity[5] = msg_dict['yawspeed']
             self.attitude = quaternion.QuaternionBase([msg_dict['roll'], msg_dict['pitch'], msg_dict['yaw']])
+            self.attitude.normalize()
+            #     if msg.get_type() == 'ATTITUDE':
+            # msg_dict = msg.to_dict()
+            # ACTUATOR_OUTPUT_STATUS
         # if msg.get_type() == 'GLOBAL_POSITION_INT':
         #     msg_dict = msg.to_dict()
         #     self.velocity[:3] = [msg_dict['vx'], msg_dict['vy'], msg_dict['vz']]
@@ -113,6 +147,10 @@ class BlueROV2Comm:
             self.master.target_system,                # target_system
             self.master.target_component,             # target_component
             *rc_channel_values)                       # RC channel list, in microseconds.
+
+        # for channel_id, pwm in enumerate(rc_channel_values):
+        #     self.master.mav.command_long_send(self.master.target_system, self.master.target_component,
+        #                                       mavutil.mavlink.MAV_CMD_DO_SET_SERVO, 0, channel_id + 1, pwm, 0, 0, 0, 0, 0)
 
 
 

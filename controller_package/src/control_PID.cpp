@@ -25,7 +25,7 @@ Eigen::Vector6d PIDClass::main(const Eigen::Quaterniond &q, const Eigen::Quatern
     if (control_mode == 0){
         integral = Eigen::Vector6d::Zero();
     }
-    tau = -Kd * v - Kp * z - integral + g;
+    tau = -Kd * v - Kp * z + g;
     return tau;
 }
 
