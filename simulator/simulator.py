@@ -7,14 +7,14 @@ from scipy.integrate import odeint
 class Simulator():        
     Kxp = 30   # Scaling of linear proportional gain
     cp = 200    # Scaling constant for angular proportional gain
-    Kd = np.identity(6)*6
+    Kd = np.identity(6)*1
 
-    x_init = np.array([0., 0., 0.])    # Position
-    q_init = np.array([1.] + [0.]*3)  # Quaternion representing orientation
-    nu_init = np.array([0.]*6)   # [v, w] linear and angular velocities
+    x_init = np.array([10, 10, 10])    # Position
+    q_init = np.array([0.5]*4)  # Quaternion representing orientation
+    nu_init = np.array([0]*6)   # [v, w] linear and angular velocities
     zeta0 = np.concatenate([x_init, q_init, nu_init])
     t = np.linspace(0,5,100)
-    x_d = np.array([10,10,10])
+    x_d = np.array([0,0,0])
     q_d = np.array([1] + [0]*3)
 
     # Constants
@@ -60,7 +60,6 @@ class Simulator():
 
     def __init__(self):
         self.M_matrix = self.create_m_mat() # Inertia matrix
-        self.main()
 
     def create_jacobi_mat(self, q):
         u = self.create_u_mat(q) # Coordinate transformation matrix
@@ -111,15 +110,7 @@ class Simulator():
         mat_d_l = -self.linear_dampening_matrix * np.identity(6)
         mat_d_q = -(self.quadratic_dampening_matrix * np.identity(6))@(abs(np.transpose(np.array([[nu[0], nu[1], nu[2], nu[3], nu[4], nu[5]]]))*np.identity(6)))
         mat_d = mat_d_l + mat_d_q
-        print(mat_d)
         return mat_d
-
-    def D(self, nu):
-        DL = -np.diag((self.X_u, self.Y_v, self.Z_w, self.K_p, self.M_q, self.N_r))
-        DNL = -np.diag((self.X_u_abs*abs(nu[0]), self.Y_v_abs*abs(nu[1]), self.Z_w_abs*abs(
-            nu[2]), self.K_p_abs*abs(nu[3]), self.M_q_abs*abs(nu[4]), self.N_r_abs*abs(nu[5])))
-        print(DL+DNL)
-        return DL + DNL
 
     def create_u_mat(self, q):
         real, imag = self.split_real_imag(q)
@@ -197,7 +188,7 @@ class Simulator():
         z = self.create_z_mat(x_tilde, q_tilde)    # Error vector
         c = self.create_c_mat(self.M_matrix, nu)    # Coriolis and Centrifugal matrix
         d = self.create_d_mat(nu)   # Dampening matrix
-        dd = self.D(nu)
+        # dd = self.D(nu)
 
         nu = np.transpose([nu])
 
@@ -214,29 +205,52 @@ class Simulator():
     def main(self):
         initial_conditions = self.zeta0
         t = np.linspace(0,15,1000)
-        sim = self.simulate(initial_conditions, t)
-        # simulation = odeint(self.simulate,initial_conditions, t)
+        # sim = self.simulate(initial_conditions, t)
+        simulation = odeint(self.simulate,initial_conditions, t)
 
-        # x = simulation[:, 0]
-        # y = simulation[:, 1]
-        # z = simulation[:, 2]
+        x = simulation[:, 0]
+        y = simulation[:, 1]
+        z = simulation[:, 2]
 
-        # # 2D
-        # fig, axs = plt.subplots(1, 3, figsize=(12, 3))
-        # axs[0].set_ylabel('x [m]')
-        # axs[1].set_ylabel('y [m]')
-        # axs[2].set_ylabel('z [m]')
-        # axs[0].plot(t, x)
-        # axs[1].plot(t, y)
-        # axs[2].plot(t, z)
+        # 2D
+        fig, axs = plt.subplots(1, 3, figsize=(12, 3))
+        axs[0].set_ylabel('x [m]')
+        axs[1].set_ylabel('y [m]')
+        axs[2].set_ylabel('z [m]')
+        axs[0].plot(t, x)
+        axs[1].plot(t, y)
+        axs[2].plot(t, z)
 
-        # for ax in axs:
-        #     ax.grid()
-        #     ax.set_xlabel('t [s]')
-        #     ax.set_ylim([-5, 15])
-        # plt.show()
+        for ax in axs:
+            ax.grid()
+            ax.set_xlabel('t [s]')
+            ax.set_ylim([-5, 15])
+        plt.show()
         
 
-if __name__ == "__main__":
-    sim = Simulator()
-    #sim.main()
+sim2 = Simulator() 
+initial = sim2.zeta0
+t = np.linspace(0,15,1000)
+ode = odeint(sim2.simulate, initial, t)
+
+x = ode[:,0]
+y = ode[:,1]
+z = ode[:,2]
+
+fig, axs = plt.subplots(1,3, figsize = (12,3))
+axs[0].set_ylabel('x [m]')
+axs[1].set_ylabel('y [m]')
+axs[2].set_ylabel('z [m]')
+axs[0].plot(t, x)
+axs[1].plot(t, y)
+axs[2].plot(t, z)
+
+for ax in axs:
+    ax.grid()
+    ax.set_xlabel('t [s]')
+    ax.set_ylim([-5, 15])
+plt.show()
+
+# if __name__ == "__main__":
+#     sim = Simulator()
+#     #sim.main()
