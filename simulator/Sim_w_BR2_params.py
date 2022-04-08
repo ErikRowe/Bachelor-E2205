@@ -139,11 +139,7 @@ def f(zeta,t):
     return np.concatenate([zetaDot, vDot])
 
 
-c = 200
-Kd = np.diag([1]*6)
-Kx = 30
-
-x_init = np.array([10, 10, 10])
+x_init = np.array([1, 1, 1])
 q_init = np.array([0.5]*4)
 v_init = np.array([0]*6)
 zeta0 = np.concatenate([x_init, q_init, v_init])
@@ -151,13 +147,27 @@ zeta0 = np.concatenate([x_init, q_init, v_init])
 x_d = np.array([0, 0, 0])
 q_d = np.array([1] + [0]*3)
 
-t = np.linspace(0,15,1000)
-sim = odeint(f,zeta0,t)
-print(sim)
+t = np.linspace(0,5,1000)
 
-x = sim[:, 0]
-y = sim[:, 1]
-z = sim[:, 2]
+Kp_values = np.linspace(1000,10000,10)
+Kd_values = np.linspace(1000,10000,10)
+sim_x = []
+sim_y = []
+sim_z = []
+
+
+
+for value in range(10):
+    c  = Kd_values[value]
+    Kd = 1000*np.diag([1]*6)
+    Kx = Kp_values[value]
+    sim = odeint(f,zeta0,t)
+    x = sim[:, 0]
+    y = sim[:, 1]
+    z = sim[:, 2]
+    sim_x.append(x)
+    sim_y.append(y)
+    sim_z.append(z)
 
 
 ## Plot
@@ -173,16 +183,21 @@ z = sim[:, 2]
 # ax.plot3D(x, y, z)
 
 # 2D
-fig, axs = plt.subplots(1, 3, figsize=(12, 3))
+fig, axs = plt.subplots(1, 3, figsize=(20, 8))
 axs[0].set_ylabel('x [m]')
+axs[0].set_title('Step response Surge')
 axs[1].set_ylabel('y [m]')
+axs[1].set_title('Step response Sway')
 axs[2].set_ylabel('z [m]')
-axs[0].plot(t, x)
-axs[1].plot(t, y)
-axs[2].plot(t, z)
+axs[2].set_title('Step response Heave')
+
+for i in range(len(Kp_values)):
+    axs[0].plot(t, sim_x[i])
+    axs[1].plot(t, sim_y[i])
+    axs[2].plot(t, sim_z[i])
 
 for ax in axs:
     ax.grid()
     ax.set_xlabel('t [s]')
-    ax.set_ylim([-5, 15])
+    ax.set_ylim([-1, 2])
 plt.show()
