@@ -147,10 +147,10 @@ zeta0 = np.concatenate([x_init, q_init, v_init])
 x_d = np.array([0, 0, 0])
 q_d = np.array([1] + [0]*3)
 
-t = np.linspace(0,5,1000)
+t = np.linspace(0,10,1000)
 
-Kp_values = np.linspace(1000,10000,10)
-Kd_values = np.linspace(1000,10000,10)
+Kp_values = np.linspace(1,100,10)
+Kd_values = np.linspace(0,1000,10)
 sim_x = []
 sim_y = []
 sim_z = []
@@ -158,8 +158,8 @@ sim_z = []
 
 
 for value in range(10):
-    c  = Kd_values[value]
-    Kd = 1000*np.diag([1]*6)
+    c  = 200
+    Kd = 1*np.diag([1]*6)
     Kx = Kp_values[value]
     sim = odeint(f,zeta0,t)
     x = sim[:, 0]
