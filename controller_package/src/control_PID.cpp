@@ -22,10 +22,10 @@ Eigen::Vector6d PIDClass::main(const Eigen::Quaterniond &q, const Eigen::Quatern
     g << fb - fg, rb.cross(fb) - rg.cross(fg);
 
     //If PD -> I = 0
-    if (control_mode == 0){
+    if (control_mode != 2){
         integral = Eigen::Vector6d::Zero();
     }
-    tau = -Kd * v - Kp * z + g;
+    tau = -Kd * v - Kp * z - integral + g;
     return tau;
 }
 

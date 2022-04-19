@@ -19,13 +19,13 @@ void UserJoystickInput::joystickToActions(const std::vector<float> axes_input, c
     double yaw      = axes.find("RStickLR")->second;
     movement = {surge, sway, heave, roll, pitch, yaw};
 
-    bool reset_attitude     = buttons.find("A")->second;
+    bool reset_attitude     = buttons.find("X")->second;
     bool return_to_surface  = buttons.find("B")->second;
-    bool surge_step         = buttons.find("X")->second;
-    reset_attitude = 0;
+    bool surge_step         = buttons.find("A")->second;
+    bool yaw_step           = buttons.find("Y")->second;
     return_to_surface = 0;
     surge_step = 0;
-    active_buttons = {reset_attitude, return_to_surface, surge_step};
+    active_buttons = {reset_attitude, return_to_surface, surge_step, yaw_step};
 }
 
 void UserJoystickInput::update_params(double surge_s, double sway_s, double heave_s)

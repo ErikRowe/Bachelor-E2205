@@ -43,10 +43,13 @@ class BlueROV2CommNode(Node):
         self.odomPub_.publish(odom_msg)
     
     def actuation_callback(self, msg):
-        pwm_signals = [-msg.thrust5, msg.thrust4, msg.thrust3, -msg.thrust6, msg.thrust1, -msg.thrust2]
+        pwm_signals = [msg.thrust5, msg.thrust4, msg.thrust3, msg.thrust6, msg.thrust1, msg.thrust2]
         result = []
         for signal in pwm_signals:
-            result.append((int)(1500 + 20 * signal))
+            num = signal
+            if signal > 10: num = 10
+            if signal < -10: num = -10
+            result.append((int)(1500 + 20 * num))
 
         rc_channel_values = [65535 for _ in range(18)]
         for channel_id, pwm in enumerate(result):

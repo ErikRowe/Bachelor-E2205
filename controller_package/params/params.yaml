@@ -1,4 +1,4 @@
-Control_Node:
+/Control_Node:
   ros__parameters:
     Buoancy_and_Weight: 1.0
     Centre_of_buoyancy:
@@ -9,18 +9,19 @@ Control_Node:
     - 0.0
     - 0.0
     - 0.0
-    Derivative_gain: 1.0
+    Derivative_gain: 5.0
     G_force: 1.0
-    Proportional_gain_angular: 10.0
-    Proportional_gain_linear: 5.0
-    Integral_gain_angular: 10.0
-    Integral_gain_linear: 5.0
+    Proportional_gain_angular: 30.0
+    Proportional_gain_linear: 0.0
+    Integral_gain_angular: 0.0
+    Integral_gain_linear: 0.0
     Windup_max_attitude: 1.0
     Windup_max_position: 5.0
     Scaling_heave: 1.0
     Scaling_surge: 1.0
     Scaling_sway: 1.0
     Control_mode: 0
+    World_frame_type: 1
     qos_overrides:
       /parameter_events:
         publisher:

@@ -5,7 +5,7 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
       gravitational_force(declare_parameter<double>("G_force", 1.0)),
       buoyancy_weight(declare_parameter<double>("Buoancy_and_Weight", 1.0)),
       scaling_linear_proportional_gain(declare_parameter<double>("Proportional_gain_linear", 5.0)),
-      scaling_angular_proportional_gain(declare_parameter<double>("Proportional_gain_angular", 1.0)),
+      scaling_angular_proportional_gain(declare_parameter<double>("Proportional_gain_angular", 10.0)),
       scaling_linear_integral_gain(declare_parameter<double>("Integral_gain_linear", 5.0)),
       scaling_angular_integral_gain(declare_parameter<double>("Integral_gain_angular", 10.0)),
       maximum_integral_windup_attitude(declare_parameter<double>("Windup_max_attitude", 1.0)),
@@ -15,8 +15,9 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
       scaling_sway(declare_parameter<double>("Scaling_sway", 1.0)),
       scaling_heave(declare_parameter<double>("Scaling_heave", 1.0)),
       control_mode(declare_parameter<int>("Control_mode", 0)),
+      world_frame_type(declare_parameter<int>("World_frame_type", 0)),
       centre_of_gravity(declare_parameter<std::vector<double>>("Centre_of_gravity", {0.0, 0.0, 0.0})),
-      center_of_buoyancy(declare_parameter<std::vector<double>>("Centre_of_buoyancy", {0.0, 0.0, 0.0}))
+      centre_of_buoyancy(declare_parameter<std::vector<double>>("Centre_of_buoyancy", {0.0, 0.0, 0.0}))
 {
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
         "joy", 10, std::bind(&ControlNode::joystick_callback, this, _1));
@@ -28,27 +29,41 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
     timer_ = this->create_wall_timer(10ms, std::bind(&ControlNode::reference_publisher, this));
     PIDTimer_ = this->create_wall_timer(30ms, std::bind(&ControlNode::sample_PID, this));
     LoggingTimer_ = this->create_wall_timer(500ms, std::bind(&ControlNode::logging, this));
+    ROS2ParamTimer_ = this->create_wall_timer(1000ms, std::bind(&ControlNode::get_ros2_params, this));
 }
 
 void ControlNode::send_actuation(Eigen::Vector6d tau)
 {
-  //Eigen::Vector8d thrusters_ = actuation_.build_actuation(tau);
+  Eigen::Vector8d thrusters_ = actuation_.build_actuation(tau);
   actuation_message_.header.stamp = clock_.now();
-  actuation_message_.thrust1 = tau(0);
-  actuation_message_.thrust2 = tau(1);
-  actuation_message_.thrust3 = tau(2);
-  actuation_message_.thrust4 = tau(3);
-  actuation_message_.thrust5 = tau(4);
-  actuation_message_.thrust6 = tau(5);
-  actuation_message_.thrust7 = 0;
-  actuation_message_.thrust8 = 0;
+  actuation_message_.thrust1 = thrusters_(0);
+  actuation_message_.thrust2 = thrusters_(1);
+  actuation_message_.thrust3 = thrusters_(2);
+  actuation_message_.thrust4 = thrusters_(3);
+  actuation_message_.thrust5 = thrusters_(4);
+  actuation_message_.thrust6 = thrusters_(5);
+  actuation_message_.thrust7 = thrusters_(6);
+  actuation_message_.thrust8 = thrusters_(7);
   act_pub_->publish(actuation_message_);
+}
+
+void ControlNode::bluerov2_standard_actuation(Eigen::Vector6d tau){
+    actuation_message_.header.stamp = clock_.now();
+    actuation_message_.thrust1 = tau(0);
+    actuation_message_.thrust2 = tau(1);
+    actuation_message_.thrust3 = tau(2);
+    actuation_message_.thrust4 = tau(3);
+    actuation_message_.thrust5 = tau(4);
+    actuation_message_.thrust6 = tau(5);
+    actuation_message_.thrust7 = 0;
+    actuation_message_.thrust8 = 0;
+    act_pub_->publish(actuation_message_);
 }
 
 void ControlNode::joystick_callback(const sensor_msgs::msg::Joy msg)
 {
     joystick_handler_.joystickToActions(msg.axes, msg.buttons);
-    reference_handler_.update_setpoint(&joystick_handler_.movement, &joystick_handler_.active_buttons, q, x);
+    reference_handler_.update_setpoint(&joystick_handler_.movement, &joystick_handler_.active_buttons, q, x, world_frame_type);
     joy_axes_logging = msg.axes;
 }
 
@@ -104,19 +119,25 @@ void ControlNode::sample_PID()
     // update params in PID and Joystick
     joystick_handler_.update_params(scaling_surge, scaling_sway, scaling_heave);
     PID_.update_params(scaling_linear_proportional_gain, scaling_linear_integral_gain, scaling_derivative_gain,
-                       centre_of_gravity, center_of_buoyancy, gravitational_force,
+                       centre_of_gravity, centre_of_buoyancy, gravitational_force,
                        buoyancy_weight, scaling_angular_proportional_gain, scaling_angular_integral_gain,
                        maximum_integral_windup_attitude, maximum_integral_windup_position, control_mode);
 
     // Run PID
     Eigen::Vector6d tau = PID_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
+    if (control_mode == 0){ //Control mode = 0 --> Open loop control
+        tau[0] = joystick_handler_.movement[0] * 10;
+        tau[1] = -joystick_handler_.movement[1] * 10;
+        tau[2] = -joystick_handler_.movement[2] * 10;
+        tau[3] = -joystick_handler_.movement[3] * 10;
+        tau[4] = -joystick_handler_.movement[4] * 10;
+        tau[5] = -joystick_handler_.movement[5] * 10;
+    }
+    //Temp change when linear motion is not readable
     tau[0] = joystick_handler_.movement[0] * 10;
-    tau[1] = joystick_handler_.movement[1] * 10;
-    tau[2] = joystick_handler_.movement[2] * 10;
-    tau[3] = joystick_handler_.movement[3] * 10;
-    tau[4] = joystick_handler_.movement[4] * 10;
-    tau[5] = joystick_handler_.movement[5] * 10;
-    send_actuation(tau);
+    tau[1] = -joystick_handler_.movement[1] * 10;
+    tau[2] = -joystick_handler_.movement[2] * 10;
+    bluerov2_standard_actuation(tau);
     z_logging = PID_.getErrorVector(q, reference_handler_.q_d, x, reference_handler_.x_d);
     tau_logging = tau;
 }
@@ -125,6 +146,29 @@ void ControlNode::logging()
 {
     rclcpp::Time time = clock_.now();
     Logg_.data_logger(tau_logging, z_logging, q, reference_handler_.q_d, x, reference_handler_.x_d, v, joy_axes_logging, time.seconds());
+}
+
+
+
+
+
+void ControlNode::get_ros2_params(){
+    this->get_parameter("G_force", gravitational_force);
+    this->get_parameter("Buoancy_and_Weight", buoyancy_weight);
+    this->get_parameter("Proportional_gain_linear", scaling_linear_proportional_gain);
+    this->get_parameter("Proportional_gain_angular", scaling_angular_proportional_gain);
+    this->get_parameter("Integral_gain_linear", scaling_linear_integral_gain);
+    this->get_parameter("Integral_gain_angular", scaling_angular_integral_gain);
+    this->get_parameter("Windup_max_attitude", maximum_integral_windup_attitude);
+    this->get_parameter("Windup_max_position", maximum_integral_windup_position);
+    this->get_parameter("Derivative_gain", scaling_derivative_gain);
+    this->get_parameter("Scaling_surge", scaling_surge);
+    this->get_parameter("Scaling_sway", scaling_sway);
+    this->get_parameter("Scaling_heave", scaling_heave);
+    this->get_parameter("Control_mode", control_mode);
+    this->get_parameter("World_frame_type", world_frame_type);
+    this->get_parameter("Centre_of_gravity", centre_of_gravity);
+    this->get_parameter("Centre_of_buoyancy", centre_of_buoyancy);
 }
 
 // Main initiates the node, and keeps it alive

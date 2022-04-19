@@ -42,6 +42,7 @@ class ControlNode : public rclcpp::Node
         rclcpp::TimerBase::SharedPtr timer_;                                                // ROS2 Timer for reference publish (WILL BE REMOVED)
         rclcpp::TimerBase::SharedPtr PIDTimer_;                                             // Timer to sample PID
         rclcpp::TimerBase::SharedPtr LoggingTimer_;                                         // Timer for data logging intervals
+        rclcpp::TimerBase::SharedPtr ROS2ParamTimer_;                                       // Timer to update from ROS2 params
         UserJoystickInput joystick_handler_;                                                // Instance of joystick input handler
         PIDClass PID_;                                                                      // Instance of PID logic handler
         LoggingClass Logg_;                                                                 // Instance of logging to file handler
@@ -66,8 +67,9 @@ class ControlNode : public rclcpp::Node
         double scaling_sway;
         double scaling_heave;
         int control_mode;
+        int world_frame_type;
         std::vector<double> centre_of_gravity;
-        std::vector<double> center_of_buoyancy;
+        std::vector<double> centre_of_buoyancy;
 
 
 
@@ -121,5 +123,19 @@ class ControlNode : public rclcpp::Node
          */
         void logging();
 
+
+
+        /**
+         * @brief Sends output in the form of surge, sway, heave, roll, pitch, yaw. Use by bluerov2 Mavlink messages
+         * 
+         * @param tau sixD vector containing angular[3] and linear[3] movement
+         */
+        void bluerov2_standard_actuation(Eigen::Vector6d tau);
+
+        /**
+         * @brief Reads ROS2 parameter changes and updates locally
+         * 
+         */
+        void get_ros2_params();
         
 };
