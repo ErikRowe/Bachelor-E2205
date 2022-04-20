@@ -48,6 +48,7 @@ def split(array, nrows, ncols):
             .swapaxes(1, 2)
             .reshape(-1, nrows, ncols))
 
+
 def Combine4(M11, M12, M21, M22):
     return np.array(np.concatenate((np.concatenate((M11, M12), axis=1),
                                     np.concatenate((M21, M22), axis=1))))
@@ -122,25 +123,25 @@ MA = Combine4(_M11A,_M12A,_M21A,_M22A)
 M = Mrb + MA
 _M11, _M12, _M21, _M22 = split(M,3,3)
 
-# os.remove('/home/elias/Documents/Bachelor/Simuleringer/Feilsøking/v.txt')
-# os.remove('/home/elias/Documents/Bachelor/Simuleringer/Feilsøking/q.txt')
-# os.remove('/home/elias/Documents/Bachelor/Simuleringer/Feilsøking/x.txt')
+# os.remove('C:\Users\elias\Documents\Debugging\v.txt')
+# os.remove('C:\Users\elias\Documents\Debugging\q.txt')
+# os.remove('C:\Users\elias\Documents\Debugging\x.txt')
 # Python program to implement Runge Kutta method
 def f(zeta,t):
     global M
     x = zeta[:3]
-    # file = open('/home/elias/Documents/Bachelor/Simuleringer/Feilsøking/x.txt','a')
+    # file = open('C:\Users\elias\Documents\Debugging\x.txt','a')
     # file.write(repr(x) + "\n")
     # file.close
     q = zeta[3:7]/np.linalg.norm(zeta[3:7])
     
-    # file = open('/home/elias/Documents/Bachelor/Simuleringer/Feilsøking/q.txt','a')
+    # file = open('C:\Users\elias\Documents\Debugging\q.txt','a')
     # file.write(repr(q) + "\n")
     # file.close
     
     v = zeta[7:]
     
-    # file = open('/home/elias/Documents/Bachelor/Simuleringer/Feilsøking/v.txt','a')
+    # file = open('C:\Users\elias\Documents\Debugging\v.txt','a')
     # file.write(repr(v) + "\n")
     # file.close
 
@@ -204,42 +205,42 @@ def euler_from_quaternion(eta, e1, e2, e3,):
         return roll_x*180/math.pi, pitch_y*180/math.pi, yaw_z*180/math.pi # in degrees
 
 
+# x = surge
+# y = sway
+# z = heave
+# om x akse = pitch
+# om y akse = roll
+# om z akse = yaw
 
+## Initial position, attitude and velocities
 x_init = np.array([0, 0, 0])
 q_init = np.array(get_quaternion_from_euler(0,0,0))
-v_init = np.array([0]*6)
+lin_speed = [0, 0, 0]
+ang_speed = [0, 0, 0]
+v_init = np.concatenate((lin_speed, ang_speed))
 zeta0 = np.concatenate([x_init, q_init, v_init])
 
-x_d = np.array([1, 1, 0])
-q_d = np.array(get_quaternion_from_euler(0,45,45)) 
+
+## Desired position and attitude
+x_d = np.array([0, 0, 0])
+q_d = np.array(get_quaternion_from_euler(0,0,10)) 
 
 
+################## Simulation ##################################################################################### 
+t = np.linspace(0,2,100)
 
-"""
-x = surge
-y = sway
-z = heave
-om x akse = pitch
-om y akse = roll
-om z akse = yaw
-
-sim_yaw = []
-sim_roll = []
-sim_pitch = []
-"""
-
-t = np.linspace(0,10)
-
-c  = 30
-Kd = 20*np.diag([1]*6)
-Kx = 30
+Kx = 1
+c  = 10
+Kd = 0*np.diag([1]*6)
 sim = odeint(f,zeta0,t)
+###################################################################################################################
 
+# Values from simulation
 surge = sim[:, 0]
 sway = sim[:, 1]
 heave = sim[:, 2]
 
-# For å gjøre om til eulvervinkler 
+# Convertion from Quaternions to Euler angles 
 eta = np.array([sim[:,3]])
 epsilon1 = np.array([sim[:,4]])
 epsilon2 = np.array([sim[:,5]])
@@ -248,16 +249,10 @@ q1 = np.concatenate((np.transpose(eta),np.transpose(epsilon1)),axis = 1)
 q2 = np.concatenate((np.transpose(epsilon2),np.transpose(epsilon3)),axis = 1)
 q = np.concatenate((q1,q2),axis = 1)
 
-
-
-
-
-
 euler = []
 for i in range(len(q)):
     ye = euler_from_quaternion(q[i][0], q[i][1], q[i][2], q[i][3])
     euler.append(ye)
-
 euler_roll = []
 euler_pitch = []
 euler_yaw = []
@@ -266,9 +261,47 @@ for i in range(len(euler)):
     euler_pitch.append(euler[i][1])
     euler_yaw.append(euler[i][2])
 
+# Linear and angular speeds
+surge_speed = sim[:, 7]
+sway_speed = sim[:, 8]
+heave_speed = sim[:, 9]
 
-# 2D
-fig, axs = plt.subplots(1, 3, figsize=(20, 8))
+roll_speed = sim[:, 10]
+pitch_speed = sim[:, 11]
+yaw_speed = sim[:, 12]
+## Plot
+# Linear and angular speeds
+fig, axs = plt.subplots(2, 3, figsize=(8, 5))
+axs[0,0].set_ylabel('x [m/s]')
+axs[0,0].set_title('Surge')
+axs[0,1].set_ylabel('y [m/s]')
+axs[0,1].set_title('Sway')
+axs[0,2].set_ylabel('z [m/s]')
+axs[0,2].set_title('Heave')
+axs[1,0].set_ylabel('x [rad]')
+axs[1,0].set_title('Roll')
+axs[1,1].set_ylabel('y [rad]')
+axs[1,1].set_title('Pitch')
+axs[1,2].set_ylabel('z [rad]')
+axs[1,2].set_title('Yaw')
+
+axs[0,0].plot(t, surge_speed)
+axs[0,1].plot(t, sway_speed)
+axs[0,2].plot(t, heave_speed)
+
+axs[1,0].plot(t, roll_speed)
+axs[1,1].plot(t, pitch_speed)
+axs[1,2].plot(t, yaw_speed)
+for i in range(3):
+    axs[0,i].grid()
+    axs[1,i].grid()
+    axs[0,i].set_xlabel('t [s]')
+    axs[1,i].set_xlabel('t [s]')
+
+
+
+# 2D Attitude
+fig, axs = plt.subplots(1, 3, figsize=(8, 5))
 axs[0].set_ylabel('x [grader]')
 axs[0].set_title('Roll')
 axs[1].set_ylabel('y [grader]')
@@ -283,21 +316,8 @@ for ax in axs:
     ax.grid()
     ax.set_xlabel('t [s]')
 
-"""
-pitch = sim[:, 3]
-roll = sim[:, 4]
-yaw = sim[:, 5]
-sim_surge.append(surge)
-sim_sway.append(sway)
-sim_heave.append(heave)
-sim_pitch.append(pitch)
-sim_roll.append(roll)
-sim_yaw.append(yaw)
 
-"""
-## Plot
-
-# 3D
+# 3D Position
 # fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 # ax.set_xlabel('x [m]')
 # ax.set_ylabel('y [m]')
@@ -307,7 +327,7 @@ sim_yaw.append(yaw)
 # ax.set_zlim([0,10])
 # ax.plot3D(surge, sway, heave)
 
-# 2D
+# 2D Position
 # fig, axs = plt.subplots(1, 3, figsize=(20, 8))
 # axs[0].set_ylabel('x [m]')
 # axs[0].set_title('Surge')
@@ -322,5 +342,5 @@ sim_yaw.append(yaw)
 # for ax in axs:
 #     ax.grid()
 #     ax.set_xlabel('t [s]')
-#     ax.set_ylim([-10, 10])
+#     ax.set_ylim([-2, 2])
 plt.show()
