@@ -9,6 +9,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/joy.hpp>
+#include <sensor_msgs/msg/imu.hpp>
 #include <geometry_msgs/msg/point.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
@@ -35,6 +36,7 @@ class ControlNode : public rclcpp::Node
     private:
         // Class declarations
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;          // Subscribes to state estimation
+        rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_estim_sub_;              //Temp shit probably
         rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr ref_pub_;             // Publishes current state (WILL BE REMOVED)
         rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;                    // Subscribes to joy input
         rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_;     // Publishes actuation message
@@ -119,6 +121,7 @@ class ControlNode : public rclcpp::Node
          * @param msg Contains information regarding velocities, position and attitude
          */
         void estimate_callback(const nav_msgs::msg::Odometry msg);
+        void imu_callback(const sensor_msgs::msg::Imu msg);
         
         /**
          * @brief Function for logging parameters to files

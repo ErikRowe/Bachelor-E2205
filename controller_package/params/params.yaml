@@ -1,6 +1,6 @@
 /Control_Node:
   ros__parameters:
-    Buoancy_and_Weight: 1.0
+    Buoancy_and_Weight: 8.0
     Centre_of_buoyancy:
     - 0.0
     - 0.0
@@ -9,10 +9,10 @@
     - 0.0
     - 0.0
     - 0.0
-    Derivative_gain: 5.0
-    G_force: 1.0
-    Proportional_gain_angular: 30.0
-    Proportional_gain_linear: 10.0
+    Derivative_gain: 1.0
+    G_force: 10.0
+    Proportional_gain_angular: 20.0
+    Proportional_gain_linear: 2.0
     Integral_gain_angular: 0.0
     Integral_gain_linear: 0.0
     Windup_max_attitude: 1.0
@@ -24,12 +24,12 @@
     Input_mode: 1
     World_frame_type: 1
     Attitude_setpoint:
-    - 1.0
-    - 0.0
-    - 0.0
-    - 0.0
+    - 0.0023
+    - 0.063
+    - 0.997
+    - 0.022
     Position_setpoint:
-    - 1.0
+    - 0.0
     - 0.0
     - 0.0
     qos_overrides:

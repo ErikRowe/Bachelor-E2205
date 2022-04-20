@@ -25,7 +25,9 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
         "joy", 10, std::bind(&ControlNode::joystick_callback, this, _1));
     state_estim_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-      "state_estimate", 10, std::bind(&ControlNode::estimate_callback, this, _1));
+      "CSEI/observer/odom", 10, std::bind(&ControlNode::estimate_callback, this, _1));
+    imu_estim_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
+      "bno055/imu", 10, std::bind(&ControlNode::imu_callback, this, _1));
 
     ref_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/reference/pose", 10);
     act_pub_ = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/actuation", 10);
@@ -82,6 +84,13 @@ void ControlNode::estimate_callback(const nav_msgs::msg::Odometry msg){
     v << lin.x, lin.y, lin.z, ang.x, ang.y, ang.z;
 }
 
+void ControlNode::imu_callback(const sensor_msgs::msg::Imu msg){
+    auto att = msg.orientation;
+    auto ang = msg.angular_velocity;
+    q = Eigen::Quaterniond(att.w, att.x, att.y, att.z);
+    v << 0, 0, 0, ang.x, ang.y, ang.z;
+}
+
 void ControlNode::moveEntity(Eigen::Vector6d tau)
 {
     double dt = 0.030;
@@ -131,17 +140,17 @@ void ControlNode::sample_PID()
     // Run PID
     Eigen::Vector6d tau = PID_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
     if (control_mode == 0){ //Control mode = 0 --> Open loop control
-        tau[0] = joystick_handler_.movement[0] * 10;
-        tau[1] = -joystick_handler_.movement[1] * 10;
-        tau[2] = -joystick_handler_.movement[2] * 10;
+        tau[0] = joystick_handler_.movement[0] * 20;
+        tau[1] = -joystick_handler_.movement[1] * 20;
+        tau[2] = -joystick_handler_.movement[2] * 20;
         tau[3] = -joystick_handler_.movement[3] * 10;
         tau[4] = -joystick_handler_.movement[4] * 10;
         tau[5] = -joystick_handler_.movement[5] * 10;
     }
-    // //Temp change when linear motion is not readable
-    // tau[0] = joystick_handler_.movement[0] * 10;
-    // tau[1] = -joystick_handler_.movement[1] * 10;
-    // tau[2] = -joystick_handler_.movement[2] * 10;
+    //Temp change when linear motion is not readable
+    tau[0] = joystick_handler_.movement[0] * 40;
+    tau[1] = -joystick_handler_.movement[1] * 40;
+    tau[2] = -joystick_handler_.movement[2] * 40;
     // bluerov2_standard_actuation(tau);
     send_actuation(tau);
     z_logging = PID_.getErrorVector(q, reference_handler_.q_d, x, reference_handler_.x_d);
@@ -150,8 +159,8 @@ void ControlNode::sample_PID()
 
 void ControlNode::logging()
 {
-    // rclcpp::Time time = clock_.now();
-    // Logg_.data_logger(tau_logging, z_logging, q, reference_handler_.q_d, x, reference_handler_.x_d, v, joy_axes_logging, time.seconds());
+    rclcpp::Time time = clock_.now();
+    Logg_.data_logger(tau_logging, z_logging, q, reference_handler_.q_d, x, reference_handler_.x_d, v, joy_axes_logging, time.seconds());
 }
 
 
@@ -187,6 +196,7 @@ void ControlNode::get_ros2_params(){
         reference_handler_.x_d[0] = ros2_param_position_setpoint[0];
         reference_handler_.x_d[1] = ros2_param_position_setpoint[1];
         reference_handler_.x_d[2] = ros2_param_position_setpoint[2];
+        reference_handler_.q_d.normalize();
     }
 }
 
