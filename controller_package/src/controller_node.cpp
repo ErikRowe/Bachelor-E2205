@@ -15,9 +15,12 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
       scaling_sway(declare_parameter<double>("Scaling_sway", 1.0)),
       scaling_heave(declare_parameter<double>("Scaling_heave", 1.0)),
       control_mode(declare_parameter<int>("Control_mode", 0)),
+      user_input_mode(declare_parameter<int>("Input_mode", 0)),
       world_frame_type(declare_parameter<int>("World_frame_type", 0)),
       centre_of_gravity(declare_parameter<std::vector<double>>("Centre_of_gravity", {0.0, 0.0, 0.0})),
-      centre_of_buoyancy(declare_parameter<std::vector<double>>("Centre_of_buoyancy", {0.0, 0.0, 0.0}))
+      centre_of_buoyancy(declare_parameter<std::vector<double>>("Centre_of_buoyancy", {0.0, 0.0, 0.0})),
+      ros2_param_attitude_setpoint(declare_parameter<std::vector<double>>("Attitude_setpoint", {1, 0, 0, 0})),
+      ros2_param_position_setpoint(declare_parameter<std::vector<double>>("Position_setpoint", {0, 0, 0}))
 {
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
         "joy", 10, std::bind(&ControlNode::joystick_callback, this, _1));
@@ -63,7 +66,9 @@ void ControlNode::bluerov2_standard_actuation(Eigen::Vector6d tau){
 void ControlNode::joystick_callback(const sensor_msgs::msg::Joy msg)
 {
     joystick_handler_.joystickToActions(msg.axes, msg.buttons);
-    reference_handler_.update_setpoint(&joystick_handler_.movement, &joystick_handler_.active_buttons, q, x, world_frame_type);
+    if(user_input_mode == 0){
+        reference_handler_.update_setpoint(&joystick_handler_.movement, &joystick_handler_.active_buttons, q, x, world_frame_type);
+    }
     joy_axes_logging = msg.axes;
 }
 
@@ -133,19 +138,20 @@ void ControlNode::sample_PID()
         tau[4] = -joystick_handler_.movement[4] * 10;
         tau[5] = -joystick_handler_.movement[5] * 10;
     }
-    //Temp change when linear motion is not readable
-    tau[0] = joystick_handler_.movement[0] * 10;
-    tau[1] = -joystick_handler_.movement[1] * 10;
-    tau[2] = -joystick_handler_.movement[2] * 10;
-    bluerov2_standard_actuation(tau);
+    // //Temp change when linear motion is not readable
+    // tau[0] = joystick_handler_.movement[0] * 10;
+    // tau[1] = -joystick_handler_.movement[1] * 10;
+    // tau[2] = -joystick_handler_.movement[2] * 10;
+    // bluerov2_standard_actuation(tau);
+    send_actuation(tau);
     z_logging = PID_.getErrorVector(q, reference_handler_.q_d, x, reference_handler_.x_d);
     tau_logging = tau;
 }
 
 void ControlNode::logging()
 {
-    rclcpp::Time time = clock_.now();
-    Logg_.data_logger(tau_logging, z_logging, q, reference_handler_.q_d, x, reference_handler_.x_d, v, joy_axes_logging, time.seconds());
+    // rclcpp::Time time = clock_.now();
+    // Logg_.data_logger(tau_logging, z_logging, q, reference_handler_.q_d, x, reference_handler_.x_d, v, joy_axes_logging, time.seconds());
 }
 
 
@@ -166,9 +172,22 @@ void ControlNode::get_ros2_params(){
     this->get_parameter("Scaling_sway", scaling_sway);
     this->get_parameter("Scaling_heave", scaling_heave);
     this->get_parameter("Control_mode", control_mode);
+    this->get_parameter("Input_mode", user_input_mode);
     this->get_parameter("World_frame_type", world_frame_type);
     this->get_parameter("Centre_of_gravity", centre_of_gravity);
     this->get_parameter("Centre_of_buoyancy", centre_of_buoyancy);
+    this->get_parameter("Attitude_setpoint", ros2_param_attitude_setpoint);
+    this->get_parameter("Position_setpoint", ros2_param_position_setpoint);
+
+    if (user_input_mode == 1){
+        reference_handler_.q_d.w() = ros2_param_attitude_setpoint[0];
+        reference_handler_.q_d.x() = ros2_param_attitude_setpoint[1];
+        reference_handler_.q_d.y() = ros2_param_attitude_setpoint[2];
+        reference_handler_.q_d.z() = ros2_param_attitude_setpoint[3];
+        reference_handler_.x_d[0] = ros2_param_position_setpoint[0];
+        reference_handler_.x_d[1] = ros2_param_position_setpoint[1];
+        reference_handler_.x_d[2] = ros2_param_position_setpoint[2];
+    }
 }
 
 // Main initiates the node, and keeps it alive

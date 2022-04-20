@@ -67,9 +67,12 @@ class ControlNode : public rclcpp::Node
         double scaling_sway;
         double scaling_heave;
         int control_mode;
+        int user_input_mode;
         int world_frame_type;
         std::vector<double> centre_of_gravity;
         std::vector<double> centre_of_buoyancy;
+        std::vector<double> ros2_param_attitude_setpoint;
+        std::vector<double> ros2_param_position_setpoint;
 
 
 
