@@ -13,7 +13,7 @@ Actuation::Actuation(){
     // The next two for loops Builds the geometry message
     for (int i = 0; i < 4; i++)
     {
-        double theta_thruster = local_Pi / 180 * Thruster_install_angles[i];
+        double theta_thruster = M_PI / 180 * Thruster_install_angles[i];
         Eigen::Matrix3d z_rotation_matrix;
         z_rotation_matrix << cos(theta_thruster), -sin(theta_thruster), 0,
                 sin(theta_thruster), cos(theta_thruster), 0,

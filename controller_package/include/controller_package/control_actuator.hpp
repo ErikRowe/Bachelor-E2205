@@ -5,7 +5,6 @@ class Actuation
     public:
         std::vector<int> Thruster_spin_direction = {1, 1, -1, -1, 1, -1, -1, 1}; // This relates to the actuators and wether they run clockwize=-1 or anti-clockwize=1
         std::vector<int> Thruster_install_angles = {-45, 45, -135, 135};         // This relates to the angle at which the four angled rotors are placed
-        const double local_Pi = 3.14;                                            // constant PI
         
 
         /**

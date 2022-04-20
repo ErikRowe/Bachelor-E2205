@@ -18,15 +18,15 @@ def generate_launch_description():
 
     config_dir = os.path.join(get_package_share_directory('controller_package'), 'params')
     param_config = os.path.join(config_dir, "params.yaml")
-    with open(param_config, 'r') as f:
-        params = yaml.safe_load(f)["controller_node"]["ros__parameters"]
+    # with open(param_config, 'r') as f:
+    #     params = yaml.safe_load(f)["controller_node"]["ros__parameters"]
 
 
     controller_node = Node(
         package = 'controller_package',
-        executable = 'controller_pid_exe',
+        executable = 'controller_node',
         output ='screen',
-        parameters = [params]
+        parameters = [param_config]
     )
 
 

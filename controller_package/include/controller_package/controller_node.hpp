@@ -20,6 +20,7 @@
 #include "controller_package/control_actuator.hpp"
 #include "controller_package/control_PID.hpp"
 #include "controller_package/control_reference.hpp"
+#include "controller_package/logging.hpp"
 
 
 
@@ -33,18 +34,24 @@ class ControlNode : public rclcpp::Node
 
     private:
         // Class declarations
-        //rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;        // Subscribes to state estimation
+        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;          // Subscribes to state estimation
         rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr ref_pub_;             // Publishes current state (WILL BE REMOVED)
         rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;                    // Subscribes to joy input
         rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_;     // Publishes actuation message
         bluerov_interfaces::msg::ActuatorInput actuation_message_;                          // Actuation message object building
         rclcpp::TimerBase::SharedPtr timer_;                                                // ROS2 Timer for reference publish (WILL BE REMOVED)
         rclcpp::TimerBase::SharedPtr PIDTimer_;                                             // Timer to sample PID
+        rclcpp::TimerBase::SharedPtr LoggingTimer_;                                         // Timer for data logging intervals
+        rclcpp::TimerBase::SharedPtr ROS2ParamTimer_;                                       // Timer to update from ROS2 params
         UserJoystickInput joystick_handler_;                                                // Instance of joystick input handler
         PIDClass PID_;                                                                      // Instance of PID logic handler
+        LoggingClass Logg_;                                                                 // Instance of logging to file handler
         Actuation actuation_;                                                               // Instance of actuation message handler
         ReferenceClass reference_handler_;                                                  // Instance of reference frame handler
         rclcpp::Clock clock_;                                                               // Makes a clock for ros2
+        Eigen::Vector6d tau_logging;                                                        // Save tau as a class variable to be used for logging
+        Eigen::Vector6d z_logging;                                                          // Save z as a class variable to be used for logging
+        std::vector<float> joy_axes_logging;                                                // Save axes inputs as a class variable to be used for logging
 
         //params
         double gravitational_force;
@@ -60,8 +67,12 @@ class ControlNode : public rclcpp::Node
         double scaling_sway;
         double scaling_heave;
         int control_mode;
+        int user_input_mode;
+        int world_frame_type;
         std::vector<double> centre_of_gravity;
-        std::vector<double> center_of_buoyancy;
+        std::vector<double> centre_of_buoyancy;
+        std::vector<double> ros2_param_attitude_setpoint;
+        std::vector<double> ros2_param_position_setpoint;
 
 
 
@@ -102,12 +113,32 @@ class ControlNode : public rclcpp::Node
          */
         void sample_PID();
 
-        // /**
-        //  * @brief Callback msg to read global state estimaton
-        //  * 
-        //  * @param msg Contains information regarding velocities, position and attitude
-        //  */
-        // void estimate_callback(const nav_msgs::msg::Odometry msg);
+        /**
+         * @brief Callback msg to read global state estimaton
+         * 
+         * @param msg Contains information regarding velocities, position and attitude
+         */
+        void estimate_callback(const nav_msgs::msg::Odometry msg);
+        
+        /**
+         * @brief Function for logging parameters to files
+         * 
+         */
+        void logging();
 
+
+
+        /**
+         * @brief Sends output in the form of surge, sway, heave, roll, pitch, yaw. Use by bluerov2 Mavlink messages
+         * 
+         * @param tau sixD vector containing angular[3] and linear[3] movement
+         */
+        void bluerov2_standard_actuation(Eigen::Vector6d tau);
+
+        /**
+         * @brief Reads ROS2 parameter changes and updates locally
+         * 
+         */
+        void get_ros2_params();
         
 };

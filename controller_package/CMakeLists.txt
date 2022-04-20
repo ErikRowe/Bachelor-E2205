@@ -22,6 +22,7 @@ add_executable(controller_node
   src/joy_to_action.cpp
   src/control_PID.cpp
   src/control_reference.cpp
+  src/logging.cpp
 )
 
 set(dependencies
@@ -47,6 +48,12 @@ install(TARGETS
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME})
+  install(DIRECTORY
+  params
+  DESTINATION share/${PROJECT_NAME})
   ament_lint_auto_find_test_dependencies()
 endif()
 
