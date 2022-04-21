@@ -29,3 +29,16 @@ Control equation: **tau** = - Kp* **v** - Kd* **z** + **g**
 
 
 
+## Connect with drone
+# Drone side
+check .basrc
+# Machine side
+export ROS_DOMAIN_ID=1 or whatever it is on drone side
+sudo netplan generate
+sudo netplan apply
+export ROS_DISCOVERY_SERVER=127.0.0.1:11811 // Unknown if this is absolutely necessary
+
+## PD params
+controll_mode 0 = open loop, 1 = pd controller
+Setpoint_input_mode 0 = joystick, 1 = param file
+World_frame_type 0 = NED, 1 = Høyrehånds regel
