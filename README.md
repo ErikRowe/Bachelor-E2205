@@ -46,3 +46,12 @@ controll_mode 0 = open loop, 1 = pd controller
 Setpoint_input_mode 0 = joystick, 1 = param file
 World_frame_type 0 = NED, 1 = Høyrehånds regel
 ```
+
+## This worked
+```
+Open new terminal
+sudo netplan generate
+sudo netplan apply
+export ROS_DOMAIN_ID=1
+sudo ifconfig lo multicast
+```
