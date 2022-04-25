@@ -66,7 +66,11 @@ Clone repository to desired folder:
 git clone https://github.com/ErikRowe/Bachelor-E2205
 ```
 
-Build and source in terminal. To start the controller node use:
+Build and source in terminal.
+```
+colcon build && source install/setup.bash
+```
+To start the controller node use:
 ```
 ros2 launch controller_package controller_launch.py
 ```
