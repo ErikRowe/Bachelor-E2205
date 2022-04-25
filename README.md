@@ -43,9 +43,9 @@ Tested on Ubuntu Focal Fossa (20.04) using ROS2 Galactic.
 ### Operator parameters
 | Parameter | Description |
 | --- | ----------- |
-| Operator_input_mode | Which operator input to use |
-| Operator_input_mode = 0 | Joystick input. Required for manual control |
-| Operator_input_mode = 1 | ROS2 parameter input. Upload setpoints from setpoint parameter files |
+| Setpoint_input_mode | Which operator input to use |
+| Setpoint_input_mode = 0 | Joystick input. Required for manual control |
+| Setpoint_input_mode = 1 | ROS2 parameter input. Upload setpoints from setpoint parameter files |
 | World_frame_type | How the ROV is represented in the world frame. Affects setpoint changes when operating with joystick |
 | World_frame_type = 0 | Expects attitude to have a normal representation (right hand rule) |
 | World_frame_type = 1 | Expects attitude to be represented in NED and compensates joystick input to be more intuitive for the operator |
