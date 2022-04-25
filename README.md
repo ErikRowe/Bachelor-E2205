@@ -80,7 +80,7 @@ If using a joystick, start joy in a new terminal window:
 ros2 run joy joy_node
 ```
 
-Use /your_folder/controller_package/params/ to change node parameters during runtime. Upload changes using the parameter files provided in /params/.
+Use /your_folder/controller_package/params/ to change node parameters during runtime. Upload changes using:
 ```
 ros2 param load /Control_Node /your_folder/controller_package/params/params.yaml
 ```
