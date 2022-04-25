@@ -36,11 +36,8 @@ The PD controller depends on state estimation information such as position, atti
 | Proportional_gain_linear | PD Controllers proportional gain which affects linear control |
 | Derivative_gain | Derivative gain for the PD controller |
 | Control_mode | How the control system should behave |
-| --- | ----------- |
-| Options | Description |
-| 0 | Manual. Joystick input is directly converted to thrust. Requires joystick |
-| 1 | PD Control. Joystick input is converted to a setpoint change OR setpoint is provided by ROS2 parameters |
-| --- | ----------- |
+|  | 0: Manual. Joystick input is directly converted to thrust. Requires joystick |
+|  | 1: PD Control. Joystick input is converted to a setpoint change OR setpoint is provided by ROS2 parameters |
 
 ### Operator parameters
 | Parameter | Description |
