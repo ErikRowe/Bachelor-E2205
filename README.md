@@ -56,7 +56,7 @@ The PD controller depends on state estimation information such as position, atti
 | --- | ----------- |
 
 ### Setpoints
-* If Operator_input_mode is set to 1, these values will be used for the PD controller
+If Operator_input_mode is set to 1, these values will be used for the PD controller
 | Parameter | Description |
 | --- | ----------- |
 | Attitude_setpoint | Attitude setpoint represented in quaternion representation in the order [w, x, y, z] |
