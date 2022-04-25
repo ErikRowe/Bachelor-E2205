@@ -18,10 +18,10 @@ find_package(Eigen3)
 
 add_executable(controller_node
   src/controller_node.cpp
-  src/control_actuator.cpp
+  src/controller_actuation_builder.cpp
   src/joy_to_action.cpp
-  src/control_PID.cpp
-  src/control_reference.cpp
+  src/controller.cpp
+  src/controller_reference.cpp
   src/logging.cpp
 )
 

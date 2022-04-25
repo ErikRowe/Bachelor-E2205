@@ -1,11 +1,11 @@
 
-#include "controller_package/control_actuator.hpp"
+#include "controller_package/controller_actuation_builder.hpp"
 
 
 
 
 
-Actuation::Actuation(){
+ActuationBuilderClass::ActuationBuilderClass(){
     LENGTHS_THRUSTERS << 0.156, 0.156, -0.156, -0.156, 0.12, 0.12, -0.12, -0.12,
                         0.111, -0.111, 0.111, -0.111, 0.218, -0.218, 0.218, -0.218,
                         0.085, 0.085, 0.085, 0.085, 0, 0, 0, 0; 
@@ -31,7 +31,7 @@ Actuation::Actuation(){
     B_pinv_ = B_.completeOrthogonalDecomposition().pseudoInverse();
 }
 
-Eigen::Vector8d Actuation::build_actuation(Eigen::Vector6d tau){
+Eigen::Vector8d ActuationBuilderClass::build_actuation(Eigen::Vector6d tau){
     Eigen::Vector8d thrust_ = B_pinv_ * tau;
     return thrust_;
 }

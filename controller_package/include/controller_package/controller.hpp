@@ -1,8 +1,6 @@
 #include "controller_package/common.hpp"
 
-using std::placeholders::_1;
-
-class PIDClass{
+class ControllerClass{
     public:
 
         /**
@@ -25,20 +23,16 @@ class PIDClass{
          * @brief Function updates the parameters of the controller from params.yaml
          * 
          * @param _Kx 
-         * @param _Kxi
          * @param _Kd 
          * @param _rG 
          * @param _rB 
          * @param _W 
          * @param _B 
          * @param _c
-         * @param _c_i
-         * @param _windup_att
-         * @param _windup_pos
          * @param _control_mode
          */
-        void update_params(double _Kx, double _Kxi, double _Kd, std::vector<double> _rG, std::vector<double> _rB,
-                           double _W, double _B, double _c, double _c_i, double _windup_att, double _windup_pos, int _control_mode);
+        void update_params(double _Kx, double _Kd, std::vector<double> _rG, std::vector<double> _rB,
+                           double _W, double _B, double _c, int _control_mode);
 
         /**
          * @brief Uses position and attitude to compute an error vector
@@ -65,26 +59,6 @@ class PIDClass{
         Eigen::Matrix6d proportionalGain(Eigen::Matrix3d R);
 
         /**
-         * @brief Calculates integral gain
-         * 
-         * @param R Current attitude as rotational matrix
-         * 
-         * @return Integral gain as 6x6 matrix
-         * 
-         */
-        Eigen::Matrix6d integralGain(Eigen::Matrix3d R);
-
-        /**
-         * @brief Limit integral windup
-         * 
-         */
-        void limit_integral_windup();
-
-
-
-        //Eigen::Matrix6d integralGain();
-
-        /**
          * @brief Finds the sign of a value
          * 
          * @param x A number to find the sign of
@@ -97,12 +71,8 @@ class PIDClass{
         Eigen::Matrix6d Kd;         //Scaling of derivative gain
         Eigen::Vector3d rg;         //Centre of gravity
         Eigen::Vector3d rb;         //Centre of buoyancy
-        Eigen::Vector6d integral;   //Built up integral value
         double W;                   //Gravitational force mg
         double B;                   //Weight and buoyancy
         double c;                   //Scaling constant for angular proportional gain
-        double c_i;                 //Scaling constant for angular integral gain
-        double W_max_att;           //Windup limit attitude
-        double W_max_pos;           //Windup limit position
-        int control_mode;           //Type of control (PID, PD etc)
+        int control_mode;           //Type of control (open loop, PD etc)
 };

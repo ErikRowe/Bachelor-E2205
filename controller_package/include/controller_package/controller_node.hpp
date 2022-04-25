@@ -8,6 +8,8 @@
 // Ros includes, these need to be included in dependencies
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
+#include <std_msgs/msg/float32_multi_array.hpp>
+#include <std_msgs/msg/float32.hpp>
 #include <sensor_msgs/msg/joy.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <geometry_msgs/msg/point.hpp>
@@ -18,9 +20,9 @@
 #include "controller_package/common.hpp"
 #include "bluerov_interfaces/msg/actuator_input.hpp"
 #include "controller_package/joy_to_action.hpp"
-#include "controller_package/control_actuator.hpp"
-#include "controller_package/control_PID.hpp"
-#include "controller_package/control_reference.hpp"
+#include "controller_package/controller_actuation_builder.hpp"
+#include "controller_package/controller.hpp"
+#include "controller_package/controller_reference.hpp"
 #include "controller_package/logging.hpp"
 
 
@@ -34,42 +36,39 @@ class ControlNode : public rclcpp::Node
         explicit ControlNode(const rclcpp::NodeOptions& options);        
 
     private:
-        // Class declarations
+        // ROS2 Declarations
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;          // Subscribes to state estimation
         rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_estim_sub_;              //Temp shit probably
-        rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr ref_pub_;             // Publishes current state (WILL BE REMOVED)
         rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;                    // Subscribes to joy input
         rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_;     // Publishes actuation message
-        bluerov_interfaces::msg::ActuatorInput actuation_message_;                          // Actuation message object building
-        rclcpp::TimerBase::SharedPtr timer_;                                                // ROS2 Timer for reference publish (WILL BE REMOVED)
-        rclcpp::TimerBase::SharedPtr PIDTimer_;                                             // Timer to sample PID
-        rclcpp::TimerBase::SharedPtr LoggingTimer_;                                         // Timer for data logging intervals
+        rclcpp::Publisher<std_msgs::msg::Float32 >::SharedPtr data_pub_;
+        rclcpp::Publisher<std_msgs::msg::Float32 >::SharedPtr data_pub_2;
+        rclcpp::Publisher<std_msgs::msg::Float32 >::SharedPtr data_pub_3;
+        rclcpp::Publisher<std_msgs::msg::Float32 >::SharedPtr data_pub_4;
+        rclcpp::TimerBase::SharedPtr SampleTimer_;                                          // Timer to sample PID
         rclcpp::TimerBase::SharedPtr ROS2ParamTimer_;                                       // Timer to update from ROS2 params
-        UserJoystickInput joystick_handler_;                                                // Instance of joystick input handler
-        PIDClass PID_;                                                                      // Instance of PID logic handler
-        LoggingClass Logg_;                                                                 // Instance of logging to file handler
-        Actuation actuation_;                                                               // Instance of actuation message handler
-        ReferenceClass reference_handler_;                                                  // Instance of reference frame handler
         rclcpp::Clock clock_;                                                               // Makes a clock for ros2
+
+        // Class declarations
+        UserJoystickInput joystick_handler_;                                                // Instance of joystick input handler
+        ControllerClass Controller_;                                                        // Instance of PID logic handler
+        LoggingClass Logg_;                                                                 // Instance of logging to file handler
+        ActuationBuilderClass actuator_builder_;                                            // Instance of actuation message handler
+        ReferenceClass reference_handler_;                                                  // Instance of reference frame handler
+
+        //Logging variable decleration
         Eigen::Vector6d tau_logging;                                                        // Save tau as a class variable to be used for logging
         Eigen::Vector6d z_logging;                                                          // Save z as a class variable to be used for logging
-        std::vector<float> joy_axes_logging;                                                // Save axes inputs as a class variable to be used for logging
+        std::vector<float> joy_axes_logging = {0, 0, 0, 0, 0, 0, 0, 0};                     // Save axes inputs as a class variable to be used for logging
 
-        //params
-        double gravitational_force;
-        double buoyancy_weight;
+        // ROS2 Parameters
+        double buoyancy;
+        double weight;
         double scaling_linear_proportional_gain;
         double scaling_angular_proportional_gain;
-        double scaling_linear_integral_gain;
-        double scaling_angular_integral_gain;
-        double maximum_integral_windup_attitude;
-        double maximum_integral_windup_position;
         double scaling_derivative_gain;
-        double scaling_surge;
-        double scaling_sway;
-        double scaling_heave;
         int control_mode;
-        int user_input_mode;
+        int setpoint_input_mode;
         int world_frame_type;
         std::vector<double> centre_of_gravity;
         std::vector<double> centre_of_buoyancy;
@@ -77,10 +76,32 @@ class ControlNode : public rclcpp::Node
         std::vector<double> ros2_param_position_setpoint;
 
 
-
+        //Initialization of local variables
         Eigen::Vector3d x = Eigen::Vector3d::Zero();                    //Locally stored position vector
         Eigen::Quaterniond q = Eigen::Quaterniond(1, 0, 0, 0);          //Locally stored attitude vector
         Eigen::Vector6d v = Eigen::Vector6d::Zero();                    //Locally stored velocity vector
+        bool last_frame_is_controller_active = false;                   //Variable to compare controller activity
+
+
+        /**
+         * @brief callback message to joy topic message. Sends message values to joystick input handler
+         * 
+         * @param msg Joy message with axes and button values
+         */
+        void joystick_callback(const sensor_msgs::msg::Joy msg);
+
+        /**
+         * @brief Callback msg to read global state estimaton
+         * 
+         * @param msg Contains information regarding velocities, position and attitude
+         */
+        void estimate_callback(const nav_msgs::msg::Odometry msg);
+
+        /**
+         * @brief Function to sample controller and retrieve desired forces tau
+         * 
+         */
+        void sample_controller();
 
         /**
          * @brief builds an actuation message from PID output
@@ -90,37 +111,16 @@ class ControlNode : public rclcpp::Node
         void send_actuation(Eigen::Vector6d tau);
 
         /**
-         * @brief callback message to joy topic message. Sends message values to joystick input handler
+         * @brief Function to publish data in ROS2 during runtime
          * 
-         * @param msg Joy message with axes and button values
          */
-        void joystick_callback(const sensor_msgs::msg::Joy msg); //const
+        void logg_data_publisher();
 
         /**
-         * @brief (WILL BE REMOVED) Function to test pipeline in RVIZ2
+         * @brief Callback msg to read global attitude estimation
          * 
-         * @param tau 
+         * @param msg Contains information regarding velocities and attitude
          */
-        void moveEntity(Eigen::Vector6d tau);
-
-        /**
-         * @brief (WILL BE REMOVED) Function to publish state
-         * 
-         */
-        void reference_publisher();
-
-        /**
-         * @brief Function to sample PID and retrieve tau
-         * 
-         */
-        void sample_PID();
-
-        /**
-         * @brief Callback msg to read global state estimaton
-         * 
-         * @param msg Contains information regarding velocities, position and attitude
-         */
-        void estimate_callback(const nav_msgs::msg::Odometry msg);
         void imu_callback(const sensor_msgs::msg::Imu msg);
         
         /**
@@ -138,6 +138,8 @@ class ControlNode : public rclcpp::Node
          */
         void bluerov2_standard_actuation(Eigen::Vector6d tau);
 
+        void quat_to_euler();
+        Eigen::Vector3d euler;
         /**
          * @brief Reads ROS2 parameter changes and updates locally
          * 

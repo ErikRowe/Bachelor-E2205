@@ -13,7 +13,7 @@ class ReferenceClass{
         * 
         */
         void update_setpoint(std::vector<double> *movement, std::vector<bool> *buttons,
-                             const Eigen::Quaterniond &q, const Eigen::Vector3d &x, const int &world_frame);
+                             const Eigen::Quaterniond &q, const Eigen::Vector3d &x, const &world_frame);
 
         Eigen::Vector3d x_d = Eigen::Vector3d::Zero();              //Setpoint position
         Eigen::Quaterniond q_d = Eigen::Quaterniond(1, 0, 0, 0);    //Setpoint attitude in quaternions
