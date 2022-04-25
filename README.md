@@ -9,6 +9,7 @@ Controller Package ROS2 node with the purpose of taking joystick input and conve
 
 The PD controller depends on state estimation information such as position, attitude and velocities. 
 
+Tested on Ubuntu Focal Fossa (20.04) using ROS2 Galactic.
 
 # ROS2
 
@@ -55,6 +56,36 @@ If Operator_input_mode is set to 1, these values will be used for the PD control
 | --- | ----------- |
 | Attitude_setpoint | Attitude setpoint represented in quaternion representation in the order [w, x, y, z] |
 | Position_setpoint | Positional setpoint represented in [x, y, z] |
+
+
+# How to use:
+
+
+Clone repository to desired folder:
+```
+git clone https://github.com/ErikRowe/Bachelor-E2205
+```
+
+Build and source in terminal. To start the controller node use:
+```
+ros2 launch controller_package controller_launch.py
+```
+
+If using a joystick, start joy in a new terminal window:
+```
+ros2 run joy joy_node
+```
+
+Use /your_folder/controller_package/params/ to change node parameters during runtime. Upload changes using the parameter files provided in /params/.
+```
+ros2 param load /Control_Node /your_folder/controller_package/params/params.yaml
+```
+```
+ros2 param load /Control_Node /your_folder/controller_package/params/attitude_setpoint.yaml
+```
+```
+ros2 param load /Control_Node /your_folder/controller_package/params/positon_setpoint.yaml
+```
 
 
 ## Connect with drone
