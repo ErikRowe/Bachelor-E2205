@@ -38,6 +38,9 @@ The PD controller depends on state estimation information such as position, atti
 | Control_mode | How the control system should behave |
 |  | 0: Manual. Joystick input is directly converted to thrust. Requires joystick |
 |  | 1: PD Control. Joystick input is converted to a setpoint change OR setpoint is provided by ROS2 parameters |
+| Control_mode | How the control system should behave |
+| Control_mode = 0 | Manual. Joystick input is directly converted to thrust. Requires joystick |
+| Control_mode = 1 | PD Control. Joystick input is converted to a setpoint change OR setpoint is provided by ROS2 parameters |
 
 ### Operator parameters
 | Parameter | Description |
