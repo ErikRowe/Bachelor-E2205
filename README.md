@@ -14,7 +14,7 @@ The PD controller depends on state estimation information such as position, atti
 
 ## Subscribes to
 * sensor_msgs/msg/Joy Joy
-* nav_msgs/msg/Odometry State_Estimate (Specific topic name unknown)
+* nav_msgs/msg/Odometry CSEI/observer/odom
 
 ## Publishes to
 * bluerov_interfaces/msg/ActuatorInput actuation
