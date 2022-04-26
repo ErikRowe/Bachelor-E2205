@@ -41,6 +41,7 @@ class ControlNode : public rclcpp::Node
         rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_estim_sub_;              //Temp shit probably
         rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;                    // Subscribes to joy input
         rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_;     // Publishes actuation message
+        rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_br2;  // Publishes actuation message to standard bluerov2
         rclcpp::Publisher<std_msgs::msg::Float32 >::SharedPtr data_pub_;
         rclcpp::Publisher<std_msgs::msg::Float32 >::SharedPtr data_pub_2;
         rclcpp::Publisher<std_msgs::msg::Float32 >::SharedPtr data_pub_3;
@@ -57,8 +58,8 @@ class ControlNode : public rclcpp::Node
         ReferenceClass reference_handler_;                                                  // Instance of reference frame handler
 
         //Logging variable decleration
-        Eigen::Vector6d tau_logging;                                                        // Save tau as a class variable to be used for logging
-        Eigen::Vector6d z_logging;                                                          // Save z as a class variable to be used for logging
+        Eigen::Vector6d tau_logging = Eigen::Vector6d::Zero();                              // Save tau as a class variable to be used for logging
+        Eigen::Vector6d z_logging = Eigen::Vector6d::Zero();                                // Save z as a class variable to be used for logging
         std::vector<float> joy_axes_logging = {0, 0, 0, 0, 0, 0, 0, 0};                     // Save axes inputs as a class variable to be used for logging
 
         // ROS2 Parameters
@@ -81,6 +82,8 @@ class ControlNode : public rclcpp::Node
         Eigen::Quaterniond q = Eigen::Quaterniond(1, 0, 0, 0);          //Locally stored attitude vector
         Eigen::Vector6d v = Eigen::Vector6d::Zero();                    //Locally stored velocity vector
         bool last_frame_is_controller_active = false;                   //Variable to compare controller activity
+        std::vector<bool> last_frame_active_actions = {false, false, false, false, false, false};         //Tracker if last frame had action input
+        std::vector<bool> active_actions = {false, false, false, false, false, false};                    //Tracker if current frame has action input
 
 
         /**

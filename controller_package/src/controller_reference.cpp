@@ -1,55 +1,28 @@
 #include "controller_package/controller_reference.hpp"
 
-void ReferenceClass::update_setpoint(std::vector<double> *movement, std::vector<bool> *buttons,
-                                     const Eigen::Quaterniond &q, const Eigen::Vector3d &x, const &world_frame){
-    Eigen::Vector3d setpoint_change_lin = x_d;    //Temp variable for positional setpoint change
-    Eigen::Quaterniond setpoint_change_att = q_d; //Temp variable for attitude setpoint change
+void ReferenceClass::update_setpoint(std::vector<bool> setpoint_changes, std::vector<bool> buttons,
+                                     const Eigen::Quaterniond &q, const Eigen::Vector3d &x){
+    
+    Eigen::Vector3d setpoint_change_lin = x;
+    Eigen::Quaterniond setpoint_change_att = q;
 
-    //Call function to handle button presses. Seperate function to improve readability
     handle_button_input(setpoint_change_lin, setpoint_change_att, buttons, q);
 
-    Eigen::Matrix3d R = q.toRotationMatrix();
-    Eigen::Vector3d I_frame_linear_action = R * Eigen::Vector3d(movement->at(0), movement->at(1), movement->at(2));
-    bool orientChange = false;
-    for (int i = 0; i < 3; i++){
-        if (I_frame_linear_action[i] != 0){
-            last_frame_active_actions[i] = true;
-            setpoint_change_lin[i] = x[i] + I_frame_linear_action[i];
-        }
-        else if (last_frame_active_actions[i]){
-            last_frame_active_actions[i] = false;
-            setpoint_change_lin[i] = x[i];
-        }
-
-        if (movement->at(i + 3) != 0){
-            orientChange = true;
-        }
-    }
-    
-    if (orientChange){
-        Eigen::Quaterniond q_relativeChange;
-        q_relativeChange = Eigen::AngleAxisd(rotation[0], Eigen::Vector3d::UnitX())
-                          *Eigen::AngleAxisd(rotation[1], Eigen::Vector3d::UnitY())
-                          *Eigen::AngleAxisd(rotation[2], Eigen::Vector3d::UnitZ());
-        q_relativeChange.normalize();
-
-        setpoint_change_att = q * q_relativeChange;
-        last_frame_active_actions[4] = true;
-    }
-    else if (last_frame_active_actions[4]){
-        setpoint_change_att = q;
-        last_frame_active_actions[4] = false;
-    }
-
-
     setpoint_change_att.normalize();
-    q_d = setpoint_change_att;  //Update setpoint
-    x_d = setpoint_change_lin;  //Update setpoint
+
+    for (int i = 0; i < 3; i++){
+        if (setpoint_changes[i]){
+            x_d[i] = setpoint_change_lin[i];
+        }
+        if (setpoint_changes[i + 3]){
+            q_d = setpoint_change_att;
+        }
+    }
 }
 
 
 void ReferenceClass::handle_button_input(Eigen::Vector3d &setpoint_change_lin, Eigen::Quaterniond &setpoint_change_att,
-                                         std::vector<bool> *buttons, const Eigen::Quaterniond &q){
+                                         std::vector<bool> buttons, const Eigen::Quaterniond &q){
     
     // auto return_to_surface = [&](){
     //     setpoint_change_att = Eigen::Quaterniond(1, 0, 0, 0);
@@ -85,11 +58,11 @@ void ReferenceClass::handle_button_input(Eigen::Vector3d &setpoint_change_lin, E
     int counter = 1;
     //Loops through button inputs and corresponding action functions
     for (auto &action : actions){
-        if(buttons->at(counter - 1) && !last_frame_active_buttons[counter]){
+        if(buttons[counter - 1] && !last_frame_active_buttons[counter]){
             action();
             last_frame_active_buttons[counter] = true;
         }
-        else if(!buttons->at(counter - 1) && last_frame_active_buttons[counter]){
+        else if(!buttons[counter - 1] && last_frame_active_buttons[counter]){
             last_frame_active_buttons[counter] = false;
         }
         counter++;

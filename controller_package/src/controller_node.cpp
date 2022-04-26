@@ -25,6 +25,7 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
 
     //Activate publishers
     act_pub_ = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/actuation", 10);
+    act_pub_br2 = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/actuation/bluerov2_standard", 10);
     data_pub_ = this->create_publisher<std_msgs::msg::Float32>("/logg_data", 10);
     data_pub_2 = this->create_publisher<std_msgs::msg::Float32>("/logg_data2", 10);
     data_pub_3 = this->create_publisher<std_msgs::msg::Float32>("/logg_data3", 10);
@@ -40,12 +41,12 @@ void ControlNode::joystick_callback(const sensor_msgs::msg::Joy msg)
 {
     joystick_handler_.joystickToActions(msg.axes, msg.buttons);
     if (world_frame_type == 1){ //If world_frame_type = 1, compensate for NED representation
-        for (int i = 1; i < 6; i++){
-            joystick_handler_.movement[i] = - joystick_handler_.movement[i];
-        }
-    }
-    if(setpoint_input_mode == 0 || control_mode == 0){
-        reference_handler_.update_setpoint(&joystick_handler_.movement, &joystick_handler_.active_buttons, q, x);
+        // joystick_handler_.movement[0] = - joystick_handler_.movement[0];
+        joystick_handler_.movement[1] = - joystick_handler_.movement[1];
+        joystick_handler_.movement[2] = - joystick_handler_.movement[2];
+        joystick_handler_.movement[3] = - joystick_handler_.movement[3];
+        joystick_handler_.movement[4] = - joystick_handler_.movement[4];
+        joystick_handler_.movement[5] = - joystick_handler_.movement[5];
     }
     joy_axes_logging = msg.axes;
 }
@@ -71,25 +72,51 @@ void ControlNode::imu_callback(const sensor_msgs::msg::Imu msg){
 
 void ControlNode::sample_controller()
 {
-    // Run PID
-    Eigen::Vector6d tau = Controller_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
-    if (control_mode == 0){ //Control mode = 0 --> Manual control
-        for (int i = 0; i < 3; i++){
-            tau[i] = joystick_handler_.movement[i] * 40;
-            tau[i + 3] = joystick_handler_.movement[i + 3] * 20;
+    std::vector<bool> setpoint_changes = {0, 0, 0, 0, 0, 0};
+    for (int i = 0; i < 6; i++){
+        active_actions[i] = (bool)joystick_handler_.movement[i];
+        if (!active_actions[i] && last_frame_active_actions[i]){
+            setpoint_changes[i] = true;
+        }
+        else{
+            setpoint_changes[i] = false;
         }
     }
+    reference_handler_.update_setpoint(setpoint_changes, joystick_handler_.active_buttons, q, x);
+
+    // Sample PID
+    Eigen::Vector6d tau_controller = Controller_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
+    Eigen::Vector6d tau_final;
+    for (int i = 0; i < 3; i++){ //Manual input, may be overridden
+        tau_final[i] = joystick_handler_.movement[i] * 40;
+        tau_final[i + 3] = joystick_handler_.movement[i + 3] * 20;
+    }
+
+    switch (control_mode){
+        case (0): // Manual control
+            break;
+        case (1): // PD Control
+            for (int i = 0; i < 6; i++){
+                if (!active_actions[i]){
+                    tau_final[i] = tau_controller[i];
+                }
+            }
+    }
     //Temp change when linear motion is not readable
-    tau[0] = joystick_handler_.movement[0] * 40;
-    tau[1] = joystick_handler_.movement[1] * 40;
-    tau[2] = joystick_handler_.movement[2] * 40;
-    // bluerov2_standard_actuation(tau);
-    send_actuation(tau);
+    tau_final[0] = joystick_handler_.movement[0] * 40;
+    tau_final[1] = joystick_handler_.movement[1] * 40;
+    tau_final[2] = joystick_handler_.movement[2] * 40;
+    bluerov2_standard_actuation(tau_final);
+    send_actuation(tau_final);
     z_logging = Controller_.getErrorVector(q, reference_handler_.q_d, x, reference_handler_.x_d);
-    tau_logging = tau;
+    tau_logging = tau_final;
 
     logg_data_publisher();
     logging();
+
+    for (int i = 0; i < 6; i++){
+        last_frame_active_actions[i] = active_actions[i];
+    }
 }
 
 void ControlNode::send_actuation(Eigen::Vector6d tau)
@@ -119,7 +146,7 @@ void ControlNode::bluerov2_standard_actuation(Eigen::Vector6d tau){
     actuation_message_.thrust6 = tau(5);
     actuation_message_.thrust7 = 0;
     actuation_message_.thrust8 = 0;
-    act_pub_->publish(actuation_message_);
+    act_pub_br2->publish(actuation_message_);
 }
 
 

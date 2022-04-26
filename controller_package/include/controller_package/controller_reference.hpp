@@ -12,8 +12,8 @@ class ReferenceClass{
         * @param x          Current position in world frame
         * 
         */
-        void update_setpoint(std::vector<double> *movement, std::vector<bool> *buttons,
-                             const Eigen::Quaterniond &q, const Eigen::Vector3d &x, const &world_frame);
+        void update_setpoint(std::vector<bool> setpoint_changes, std::vector<bool> buttons,
+                             const Eigen::Quaterniond &q, const Eigen::Vector3d &x);
 
         Eigen::Vector3d x_d = Eigen::Vector3d::Zero();              //Setpoint position
         Eigen::Quaterniond q_d = Eigen::Quaterniond(1, 0, 0, 0);    //Setpoint attitude in quaternions
@@ -28,8 +28,7 @@ class ReferenceClass{
         * 
         */
         void handle_button_input(Eigen::Vector3d &setpoint_change_lin, Eigen::Quaterniond &setpoint_change_att,
-                                 std::vector<bool> *buttons, const Eigen::Quaterniond &q);
+                                 std::vector<bool> buttons, const Eigen::Quaterniond &q);
 
-        bool last_frame_active_actions[4];  //Tracker if last frame had action input
-        bool last_frame_active_buttons[11]; //Tracker if last frame had button input
+        bool last_frame_active_buttons[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; //Tracker if last frame had button input
 };

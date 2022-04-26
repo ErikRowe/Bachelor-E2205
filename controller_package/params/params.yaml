@@ -10,9 +10,9 @@
     - 0.0
     - 0.0
     - 0.0
-    Proportional_gain_angular: 10.0
+    Proportional_gain_angular: 40.0
     Proportional_gain_linear: 0.0
     Derivative_gain: 1.0
     Control_mode: 1
-    Setpoint_input_mode: 0
+    Setpoint_input_mode: 1
     World_frame_type: 1
