@@ -26,7 +26,7 @@ Tested on Ubuntu Focal Fossa (20.04) using ROS2 Galactic.
 | Parameter | Description |
 | --- | ----------- |
 | Buoancy | Upwards force from buoancy properties (N) |
-| Weight | Upwards force from buoancy properties (N) |
+| Weight | Downwards force from weight properties (N) |
 | Centre_of_buoyancy | 3-Dimensional vector [x, y, z] with the centre of buoancy force relative to the ROVs geometrical centre |
 | Centre_of_gravity | 3-Dimensional vector [x, y, z] with the centre of gravitational force relative to the ROVs geometrical centre |
 
