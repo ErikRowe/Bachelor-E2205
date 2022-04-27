@@ -1,6 +1,6 @@
 #include "controller_package/common.hpp"
 
-class Actuation
+class ActuationBuilderClass
 {
     public:
         std::vector<int> Thruster_spin_direction = {1, 1, -1, -1, 1, -1, -1, 1}; // This relates to the actuators and wether they run clockwize=-1 or anti-clockwize=1
@@ -15,7 +15,7 @@ class Actuation
          */
         Eigen::Vector8d build_actuation(Eigen::Vector6d tau);
 
-        Actuation();
+        ActuationBuilderClass();
 
     private:
         Eigen::Matrix38d LENGTHS_THRUSTERS;         // Length of thrusters to center of drone. This needs to be verified

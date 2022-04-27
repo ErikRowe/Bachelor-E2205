@@ -14,9 +14,9 @@ class BlueROV2CommNode(Node):
 
     def __init__(self):
         super().__init__('bluerov2_comm_node')
-        self.odomPub_ = self.create_publisher(Odometry, 'state_estimate', 10)
+        self.odomPub_ = self.create_publisher(Odometry, 'CSEI/observer/odom', 10)
         self.joySub_ = self.create_subscription(Joy, 'joy', self.joystick_callback, 10)
-        self.actuatorSub_ = self.create_subscription(ActuatorInput, 'actuation', self.actuation_callback, 10)
+        self.actuatorSub_ = self.create_subscription(ActuatorInput, 'actuation/bluerov2_standard', self.actuation_callback, 10)
         self.actuatorSub_  # prevent unused variable warning
         timer_period = 0.001  # seconds
         self.state_update_timer = self.create_timer(timer_period, self.update_state)
@@ -40,6 +40,10 @@ class BlueROV2CommNode(Node):
         odom_msg.pose.pose.orientation.x = float(self.comm.attitude[1])
         odom_msg.pose.pose.orientation.y = float(self.comm.attitude[2])
         odom_msg.pose.pose.orientation.z = float(self.comm.attitude[3])
+
+        odom_msg.twist.twist.angular.x = float(self.comm.velocity[3])
+        odom_msg.twist.twist.angular.y = float(self.comm.velocity[4])
+        odom_msg.twist.twist.angular.z = float(self.comm.velocity[5])
         self.odomPub_.publish(odom_msg)
     
     def actuation_callback(self, msg):
@@ -47,9 +51,9 @@ class BlueROV2CommNode(Node):
         result = []
         for signal in pwm_signals:
             num = signal
-            if signal > 10: num = 10
-            if signal < -10: num = -10
-            result.append((int)(1500 + 20 * num))
+            if signal > 40: num = 40
+            if signal < -40: num = -40
+            result.append((int)(1500 + 5 * num))
 
         rc_channel_values = [65535 for _ in range(18)]
         for channel_id, pwm in enumerate(result):
@@ -60,10 +64,10 @@ class BlueROV2CommNode(Node):
         self.comm.set_rc_channel_pwm(rc_channel_values)
 
     def joystick_callback(self, msg):
-        if msg.buttons[1]:
+        if msg.buttons[2]:
             self.comm.disarm()
             return
-        if msg.buttons[0]: self.comm.arm()
+        if msg.buttons[3]: self.comm.arm()
         
 
 
