@@ -14,11 +14,13 @@ Tested on Ubuntu Focal Fossa (20.04) using ROS2 Galactic.
 # ROS2
 
 ## Subscribes to
-* sensor_msgs/msg/Joy Joy
-* nav_msgs/msg/Odometry CSEI/observer/odom
+* sensor_msgs/msg/Joy Joy (Required for joystick operation)
+* sensor_msgs/msg/Imu bno055/imu (Alternative to odom for attitude)
+* nav_msgs/msg/Odometry CSEI/observer/odom (Required for state estimation)
 
 ## Publishes to
-* bluerov_interfaces/msg/ActuatorInput actuation
+* bluerov_interfaces/msg/ActuatorInput /actuation (Used by actuator driver)
+* bluerov_interfaces/msgActuatorInput /actuation/bluerov2_standard (Used by bluerov2_communication node, to connect to ardusub)
 
 ## ROS2 Parameters
 
@@ -100,7 +102,6 @@ check .basrc
 export ROS_DOMAIN_ID=1 or whatever it is on drone side
 sudo netplan generate
 sudo netplan apply
-export ROS_DISCOVERY_SERVER=127.0.0.1:11811 // Unknown if this is absolutely necessary
 ```
 
 ## PD params
