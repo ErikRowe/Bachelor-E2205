@@ -43,19 +43,19 @@ Tested on Ubuntu Focal Fossa (20.04) using ROS2 Galactic.
 ### Operator parameters
 | Parameter | Description |
 | --- | ----------- |
-| Setpoint_input_mode | Which operator input to use |
-| Setpoint_input_mode = 0 | Joystick input. Required for manual control |
-| Setpoint_input_mode = 1 | ROS2 parameter input. Upload setpoints from setpoint parameter files |
+| Use_param_file_setpoint | If true, use sthe setpoint uploaded by the parameter files |
 | World_frame_type | How the ROV is represented in the world frame. Affects setpoint changes when operating with joystick |
 | World_frame_type = 0 | Expects attitude to have a normal representation (right hand rule) |
 | World_frame_type = 1 | Expects attitude to be represented in NED and compensates joystick input to be more intuitive for the operator |
+| Use_imu_directly | Use data from IMU directly instead of state estimate |
 
 ### Setpoints
-If Operator_input_mode is set to 1, these values will be used for the PD controller
+If Use_param_file_setpoint is true, these values will be used for the PD controller. Remember to upload updated values to the ROS2 node parameters. 
 | Parameter | Description |
 | --- | ----------- |
 | Attitude_setpoint | Attitude setpoint represented in quaternion representation in the order [w, x, y, z] |
 | Position_setpoint | Positional setpoint represented in [x, y, z] |
+
 
 
 # How to use:
