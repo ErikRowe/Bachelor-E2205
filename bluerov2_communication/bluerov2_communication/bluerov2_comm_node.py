@@ -32,15 +32,19 @@ class BlueROV2CommNode(Node):
         odom_msg.header.stamp = self.get_clock().now().to_msg()
         odom_msg.header.frame_id = "/map"
         odom_msg.child_frame_id = "/base_link"
-        odom_msg.pose.pose.position.x = 0.0
-        odom_msg.pose.pose.position.y = 0.0
-        odom_msg.pose.pose.position.z = 0.0
+        # Position estimate unavailable, set to 0
+        odom_msg.pose.pose.position.x = float(self.comm.position[0])
+        odom_msg.pose.pose.position.y = float(self.comm.position[1])
+        odom_msg.pose.pose.position.z = float(self.comm.position[2])
         
         odom_msg.pose.pose.orientation.w = float(self.comm.attitude[0])
         odom_msg.pose.pose.orientation.x = float(self.comm.attitude[1])
         odom_msg.pose.pose.orientation.y = float(self.comm.attitude[2])
         odom_msg.pose.pose.orientation.z = float(self.comm.attitude[3])
-
+        
+        odom_msg.twist.twist.linear.x = float(self.comm.velocity[0])
+        odom_msg.twist.twist.linear.y = float(self.comm.velocity[1])
+        odom_msg.twist.twist.linear.z = float(self.comm.velocity[2])
         odom_msg.twist.twist.angular.x = float(self.comm.velocity[3])
         odom_msg.twist.twist.angular.y = float(self.comm.velocity[4])
         odom_msg.twist.twist.angular.z = float(self.comm.velocity[5])
@@ -49,25 +53,25 @@ class BlueROV2CommNode(Node):
     def actuation_callback(self, msg):
         pwm_signals = [msg.thrust5, msg.thrust4, msg.thrust3, msg.thrust6, msg.thrust1, msg.thrust2]
         result = []
+        # Loop through and cap pwm signals at 1700/1300 (40 * 5 = 200. 1500 +- 200 = 1700 / 1300)
         for signal in pwm_signals:
             num = signal
             if signal > 40: num = 40
             if signal < -40: num = -40
             result.append((int)(1500 + 5 * num))
-
+        
+        # Loop through and append desired pwm signal to channels. Unused channels are ignored
         rc_channel_values = [65535 for _ in range(18)]
         for channel_id, pwm in enumerate(result):
             rc_channel_values[channel_id] = pwm
 
-        #for x in rc_channel_values:
-        #    self.get_logger().info('Publishing: "%i"' % x)
         self.comm.set_rc_channel_pwm(rc_channel_values)
 
     def joystick_callback(self, msg):
-        if msg.buttons[2]:
+        if msg.buttons[2]: # Buttons[2] = X
             self.comm.disarm()
             return
-        if msg.buttons[3]: self.comm.arm()
+        if msg.buttons[3]: self.comm.arm() # Buttons[3] = Y
         
 
 
@@ -90,20 +94,23 @@ class BlueROV2Comm:
         #  it's possible to add a new output port in http:192.168.2.2:2770/mavproxy as a new line.
         #  E.g: --out udpbcast:192.168.2.255:yourport
         
+        # Using port 15000 to have QGroundControl in parallell
         self.master = mavutil.mavlink_connection('udpin:0.0.0.0:15000')
 
         # Make sure the connection is valid
+        # This is important to have correct Mavlink message versions
         self.master.wait_heartbeat()
 
-        self.init_stored_vars()
+        self.init_stored_vars() # Initialize local variables
 
     def init_stored_vars(self):
         self.attitude = quaternion.QuaternionBase()
-        #self.position = [0]*3
+        self.position = [0]*3
         self.velocity = [0]*6
         self.previous_time = None
 
     def arm(self):
+        # Allow thruster movement
         self.master.mav.command_long_send(
         self.master.target_system,
         self.master.target_component,
@@ -112,6 +119,7 @@ class BlueROV2Comm:
         1, 0, 0, 0, 0, 0, 0)
 
     def disarm(self):
+        #Disallow thruster movement
         self.master.mav.command_long_send(
         self.master.target_system,
         self.master.target_component,
@@ -121,26 +129,30 @@ class BlueROV2Comm:
 
 
     def read_data(self):
-        msg = self.master.recv_match()
+        # Read sensor data from Mavlink messages
+        msg = self.master.recv_match() # Intercept messages
         if not msg:
             return
-        if msg.get_type() == 'ATTITUDE':
+        if msg.get_type() == 'ATTITUDE': # Intercept attitude messages
             msg_dict = msg.to_dict()
             
+            # Only euler angle representation is available. Convert to quaternion representation
             self.velocity[3] = msg_dict['rollspeed']
             self.velocity[4] = msg_dict['pitchspeed']
             self.velocity[5] = msg_dict['yawspeed']
             self.attitude = quaternion.QuaternionBase([msg_dict['roll'], msg_dict['pitch'], msg_dict['yaw']])
             self.attitude.normalize()
-            #     if msg.get_type() == 'ATTITUDE':
-            # msg_dict = msg.to_dict()
-            # ACTUATOR_OUTPUT_STATUS
+        
+        # If GPS is install on the BlueROV2, this function may be uncommented to recieve a position estimate
         # if msg.get_type() == 'GLOBAL_POSITION_INT':
         #     msg_dict = msg.to_dict()
-        #     self.velocity[:3] = [msg_dict['vx'], msg_dict['vy'], msg_dict['vz']]
+        #     self.velocity[0] = msg_dict['vx']
+        #     self.velocity[1] = msg_dict['vy']
+        #     self.velocity[2] = msg_dict['vz']
         #     self.estimate_position(msg_dict['time_boot_ms'])
 
     def estimate_position(self, current_time):
+        # Create position estimate from linear velocities
         if self.previous_time == None:
             self.previous_time = current_time
         dt = (current_time - self.previous_time) / 10e3
@@ -154,10 +166,6 @@ class BlueROV2Comm:
             self.master.target_system,                # target_system
             self.master.target_component,             # target_component
             *rc_channel_values)                       # RC channel list, in microseconds.
-
-        # for channel_id, pwm in enumerate(rc_channel_values):
-        #     self.master.mav.command_long_send(self.master.target_system, self.master.target_component,
-        #                                       mavutil.mavlink.MAV_CMD_DO_SET_SERVO, 0, channel_id + 1, pwm, 0, 0, 0, 0, 0)
 
 
 
