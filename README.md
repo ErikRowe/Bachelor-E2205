@@ -9,6 +9,7 @@ Controller Package ROS2 node with the purpose of taking joystick input and conve
 
 The PD controller depends on state estimation information such as position, attitude and velocities. 
 
+Tested on Ubuntu Focal Fossa (20.04) using ROS2 Galactic.
 
 # ROS2
 
@@ -25,7 +26,7 @@ The PD controller depends on state estimation information such as position, atti
 | Parameter | Description |
 | --- | ----------- |
 | Buoancy | Upwards force from buoancy properties (N) |
-| Weight | Upwards force from buoancy properties (N) |
+| Weight | Downwards force from weight properties (N) |
 | Centre_of_buoyancy | 3-Dimensional vector [x, y, z] with the centre of buoancy force relative to the ROVs geometrical centre |
 | Centre_of_gravity | 3-Dimensional vector [x, y, z] with the centre of gravitational force relative to the ROVs geometrical centre |
 
@@ -42,19 +43,53 @@ The PD controller depends on state estimation information such as position, atti
 ### Operator parameters
 | Parameter | Description |
 | --- | ----------- |
-| Operator_input_mode | Which operator input to use |
-| Operator_input_mode = 0 | Joystick input. Required for manual control |
-| Operator_input_mode = 1 | ROS2 parameter input. Upload setpoints from setpoint parameter files |
+| Use_param_file_setpoint | If true, use sthe setpoint uploaded by the parameter files |
 | World_frame_type | How the ROV is represented in the world frame. Affects setpoint changes when operating with joystick |
 | World_frame_type = 0 | Expects attitude to have a normal representation (right hand rule) |
 | World_frame_type = 1 | Expects attitude to be represented in NED and compensates joystick input to be more intuitive for the operator |
+| Use_imu_directly | Use data from IMU directly instead of state estimate |
 
 ### Setpoints
-If Operator_input_mode is set to 1, these values will be used for the PD controller
+If Use_param_file_setpoint is true, these values will be used for the PD controller. Remember to upload updated values to the ROS2 node parameters. 
 | Parameter | Description |
 | --- | ----------- |
 | Attitude_setpoint | Attitude setpoint represented in quaternion representation in the order [w, x, y, z] |
 | Position_setpoint | Positional setpoint represented in [x, y, z] |
+
+
+
+# How to use:
+
+
+Clone repository to desired folder:
+```
+git clone https://github.com/ErikRowe/Bachelor-E2205
+```
+
+Build and source in terminal.
+```
+colcon build && source install/setup.bash
+```
+To start the controller node use:
+```
+ros2 launch controller_package controller_launch.py
+```
+
+If using a joystick, start joy in a new terminal window:
+```
+ros2 run joy joy_node
+```
+
+Use /your_folder/controller_package/params/ to change node parameters during runtime. Upload changes using:
+```
+ros2 param load /Control_Node /your_folder/controller_package/params/params.yaml
+```
+```
+ros2 param load /Control_Node /your_folder/controller_package/params/attitude_setpoint.yaml
+```
+```
+ros2 param load /Control_Node /your_folder/controller_package/params/positon_setpoint.yaml
+```
 
 
 ## Connect with drone
