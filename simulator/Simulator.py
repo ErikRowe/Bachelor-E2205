@@ -224,7 +224,7 @@ zeta0 = np.concatenate([x_init, q_init, v_init])
 
 ## Desired position and attitude
 x_d = np.array([0, 0, 0])
-q_d = np.array(get_quaternion_from_euler(0,0,90)) 
+q_d = np.array(get_quaternion_from_euler(0,45,0)) 
 print(q_d)
 
 ################## Simulation ##################################################################################### 

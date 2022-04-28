@@ -75,13 +75,12 @@ void ControlNode::imu_callback(const sensor_msgs::msg::Imu msg){
 void ControlNode::controller_node_main()
 {
     //Logic to allow setpoint changes when releasing joystick
-    static std::vector<bool> setpoint_changes = {0, 0, 0, 0, 0, 0};
+    std::vector<bool> setpoint_changes = {0, 0, 0, 0, 0, 0};
     Eigen::Matrix3d R = q.toRotationMatrix();
-    Eigen::Vector3d I_frame_lin = R * Eigen::Vector3d(joystick_handler_.movement[0], joystick_handler_.movement[1], joystick_handler_.movement[2]);
-    Eigen::Vector3d I_frame_ang = R * Eigen::Vector3d(joystick_handler_.movement[3], joystick_handler_.movement[4], joystick_handler_.movement[5]);
+    Eigen::Vector3d I_frame_lin = R * Eigen::Vector3d(joystick_handler_.movement[0] * 40, joystick_handler_.movement[1] * 40, joystick_handler_.movement[2] * 40);
     for (int i = 0; i < 3; i++){
-        active_actions[i] = (bool)I_frame_lin[i];
-        active_actions[i + 3] = (bool)I_frame_ang[i];
+        active_actions[i] = (bool)I_frame_lin [i];
+        active_actions[i + 3] = (bool)joystick_handler_.movement[i + 3];
         if (!active_actions[i] && last_tick_active_actions[i]){
             setpoint_changes[i] = true;
         }
@@ -93,9 +92,12 @@ void ControlNode::controller_node_main()
     if (control_mode == 2 && !(bool)joystick_handler_.movement[2]){
         setpoint_changes[2] = false;
     }
+    else if (control_mode == 2 && (bool)joystick_handler_.movement[2]){
+        setpoint_changes[2] = true;
+    }
     //Check and perform setpoint changes from joystick release
     //Also check if buttons are pressed to activate standard operations
-    reference_handler_.update_setpoint(&setpoint_changes, &joystick_handler_.active_buttons, q, x);
+    reference_handler_.update_setpoint(setpoint_changes, joystick_handler_.active_buttons, q, x);
 
 
     if (use_param_file_setpoint){ //If using ROS2 parameter setpoint, override joystick setpoint
@@ -130,28 +132,31 @@ void ControlNode::controller_node_main()
     }
 
     switch (control_mode){
-        case (0): // Manual control
+        case 0: // Manual control
             break;
-        case (1): // PD Control
+        case 1: // PD Control
             for (int i = 0; i < 6; i++){
-                if (!active_actions[i]){ // If joystick is active, use manual input, else use controller
+                if (!(bool)joystick_handler_.movement[i]){ // If joystick is active, use manual input, else use controller
                     tau_final[i] = tau_controller[i];
                 }
             }
-        case (2): //PD Control Depth Hold
+            break;
+        case 2: //PD Control Depth Hold
             if (!setpoint_changes[2]){
                 I_frame_lin[2] = 0;
             }
-            else{
-                I_frame_lin[0] = 0;
-                I_frame_lin[1] = 0;
+            else if ((bool)joystick_handler_.movement[2]){
+                Eigen::Vector3d I_frame_heave = R * Eigen::Vector3d(0, 0, joystick_handler_.movement[2] * 40);
+                I_frame_lin[0] -= I_frame_heave[0];
+                I_frame_lin[1] -= I_frame_heave[1];
             }
             tau_final << R.transpose() * I_frame_lin, tau_final[3], tau_final[4], tau_final[5];
             for (int i = 0; i < 6; i++){
-                if (!active_actions[i]){ // If joystick is active, use manual input, else use controller
+                if (!(bool)joystick_handler_.movement[i]){ // If joystick is active, use manual input, else use controller
                     tau_final[i] = tau_controller[i];
                 }
             }
+            break;
     }
 
     bluerov2_standard_actuation(tau_final); //Send actuation to topic accessed by bluerov2_communication node
