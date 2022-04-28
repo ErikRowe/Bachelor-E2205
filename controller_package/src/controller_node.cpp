@@ -81,9 +81,6 @@ void ControlNode::controller_node_main()
         if (!active_actions[i] && last_tick_active_actions[i]){
             setpoint_changes[i] = true;
         }
-        else{
-            setpoint_changes[i] = false;
-        }
     }
     //Check and perform setpoint changes from joystick release
     //Also check if buttons are pressed to activate standard operations
@@ -106,7 +103,7 @@ void ControlNode::controller_node_main()
         reference_handler_.q_d = q;
         last_tick_is_controller_active = true;
     }
-    else{
+    else if (control_mode == 0){
         last_tick_is_controller_active = false;
     }
 
