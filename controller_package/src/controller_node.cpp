@@ -76,11 +76,22 @@ void ControlNode::controller_node_main()
 {
     //Logic to allow setpoint changes when releasing joystick
     static std::vector<bool> setpoint_changes = {0, 0, 0, 0, 0, 0};
-    for (int i = 0; i < 6; i++){
-        active_actions[i] = (bool)joystick_handler_.movement[i];
+    Eigen::Matrix3d R = q.toRotationMatrix();
+    Eigen::Vector3d I_frame_lin = R * Eigen::Vector3d(joystick_handler_.movement[0], joystick_handler_.movement[1], joystick_handler_.movement[2]);
+    Eigen::Vector3d I_frame_ang = R * Eigen::Vector3d(joystick_handler_.movement[3], joystick_handler_.movement[4], joystick_handler_.movement[5]);
+    for (int i = 0; i < 3; i++){
+        active_actions[i] = (bool)I_frame_lin[i];
+        active_actions[i + 3] = (bool)I_frame_ang[i];
         if (!active_actions[i] && last_tick_active_actions[i]){
             setpoint_changes[i] = true;
         }
+        if (!active_actions[i + 3] && last_tick_active_actions[i + 3]){
+            setpoint_changes[i + 3] = true;
+        }
+    }
+    //If depth hold, only allow heave movement to change heave setpoint
+    if (control_mode == 2 && !(bool)joystick_handler_.movement[2]){
+        setpoint_changes[2] = false;
     }
     //Check and perform setpoint changes from joystick release
     //Also check if buttons are pressed to activate standard operations
