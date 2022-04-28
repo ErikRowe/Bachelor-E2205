@@ -138,6 +138,20 @@ void ControlNode::controller_node_main()
                     tau_final[i] = tau_controller[i];
                 }
             }
+        case (2): //PD Control Depth Hold
+            if (!setpoint_changes[2]){
+                I_frame_lin[2] = 0;
+            }
+            else{
+                I_frame_lin[0] = 0;
+                I_frame_lin[1] = 0;
+            }
+            tau_final << R.transpose() * I_frame_lin, tau_final[3], tau_final[4], tau_final[5];
+            for (int i = 0; i < 6; i++){
+                if (!active_actions[i]){ // If joystick is active, use manual input, else use controller
+                    tau_final[i] = tau_controller[i];
+                }
+            }
     }
 
     bluerov2_standard_actuation(tau_final); //Send actuation to topic accessed by bluerov2_communication node
