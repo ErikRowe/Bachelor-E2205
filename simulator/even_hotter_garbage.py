@@ -8,16 +8,16 @@ import matplotlib.pyplot as plt
 # pitch_nosedown90 = 0 #TODO: Convert to CSV
 #df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/45yaw.csv')
 # yaw90 = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/90yaw.csv')
-# yaw135 = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/135yaw.csv')
+# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/135yaw.csv', skiprows=1)
 # yaw180 = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/180yaw.csv')
-df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/roll90_left.csv')
+#df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/roll90_left.csv')
 #df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/roll90_right.csv')
 # video_example = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/video_example.csv')
-
+df = pd.read_csv('/home/elias/bs_ws/Data Logging/modified_ROV/90roll.xlsx',skiprows=1)
 ### README
 # To change dataset to plot, rename it to df and comment out dataset not in use
 
-start = 1610
+start = 400
 stop = -1
 
 Columns = df.columns 
@@ -65,7 +65,7 @@ A7 = df[Columns[39]].tolist()
 A8 = df[Columns[40]].tolist()
 print(len(A8[start:stop]))
 
-t = np.linspace(0, len(Time[start:stop]) * 0.03, len(Time[start:stop]))
+t = np.linspace(0, len(Time[start:stop]) * 0.025, len(Time[start:stop]))
 ##TODO: FIX TIME AXIS
 
 fig, axs = plt.subplots(2, 4, figsize=(8, 5))

@@ -10,10 +10,10 @@
     - 0.0 # x
     - 0.0 # y
     - 0.0 # z
-    Proportional_gain_angular: 40.0       # Proportional gain used in angular control
+    Proportional_gain_angular: 20.0       # Proportional gain used in angular control
     Proportional_gain_linear: 0.0         # Proportional gain used in linear control
-    Derivative_gain: 1.0                  # Derivative gain used in angular and linear control
-    Control_mode: 2                       # Type of control mode. 0 = manual, 1 = PD
-    Use_param_file_setpoint: false        # Use parameter file setpoints
+    Derivative_gain: 5.0                  # Derivative gain used in angular and linear control
+    Control_mode: 1                       # Type of control mode. 0 = manual, 1 = PD
+    Use_param_file_setpoint: true        # Use parameter file setpoints
     World_frame_type: 1                   # Compensate joystick input for different body frames
     Use_imu_directly: false               # Use data from IMU directly instead of state estimate

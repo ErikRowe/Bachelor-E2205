@@ -1,7 +1,12 @@
 /Control_Node:
   ros__parameters:
     Attitude_setpoint:
-    - 0.1 # w
-    - 0.0 # x
-    - 0.0 # y
-    - 0.0 # z
+    # - 1.0 # w
+    # - 0.0 # x
+    # - 0.0 # y
+    # - 0.0 # z
+    - 0.707
+    - 0.707
+    - 0.0
+    - 0.0
+

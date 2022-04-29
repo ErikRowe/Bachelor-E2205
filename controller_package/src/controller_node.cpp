@@ -7,7 +7,7 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
       scaling_linear_proportional_gain(declare_parameter<double>("Proportional_gain_linear", 0.0)),
       scaling_angular_proportional_gain(declare_parameter<double>("Proportional_gain_angular", 0.0)),
       scaling_derivative_gain(declare_parameter<double>("Derivative_gain", 0.0)),
-      use_param_file_setpoint(declare_parameter<bool>("Setpoint_input_mode", false)),
+      use_param_file_setpoint(declare_parameter<bool>("Use_param_file_setpoint", false)),
       use_imu_directly(declare_parameter<bool>("Use_imu_directly", false)),
       control_mode(declare_parameter<int>("Control_mode", 0)),
       world_frame_type(declare_parameter<int>("World_frame_type", 0)),
@@ -25,11 +25,11 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
       "bno055/imu", 10, std::bind(&ControlNode::imu_callback, this, _1));
 
     //Activate publishers
-    act_pub_ = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/actuation", 10);
+    act_pub_ = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/bluerov/u", 10);
     act_pub_br2 = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/actuation/bluerov2_standard", 10);
 
     //Activate timers
-    SampleTimer_ = this->create_wall_timer(30ms, std::bind(&ControlNode::controller_node_main, this));
+    SampleTimer_ = this->create_wall_timer(25ms, std::bind(&ControlNode::controller_node_main, this));
     ROS2ParamTimer_ = this->create_wall_timer(1000ms, std::bind(&ControlNode::get_ros2_params, this));
 }
 
@@ -55,9 +55,11 @@ void ControlNode::estimate_callback(const nav_msgs::msg::Odometry msg){
     auto ang = msg.twist.twist.angular;
     if (!use_imu_directly){
         x = Eigen::Vector3d(pos.x, pos.y, pos.z);
+        // x = Eigen::Vector3d::Zero();
         q = Eigen::Quaterniond(att.w, att.x, att.y, att.z);
         q.normalize();
-        v << lin.x, lin.y, lin.z, ang.x, ang.y, ang.z;
+        // v << lin.x, lin.y, lin.z, ang.x, ang.y, ang.z;
+        v << 0, 0, 0, ang.x, ang.y, ang.z;
     }
 }
 
@@ -97,6 +99,15 @@ void ControlNode::controller_node_main()
     //Also check if buttons are pressed to activate standard operations
     reference_handler_.update_setpoint(setpoint_changes, joystick_handler_.active_buttons, q, x);
 
+    //Create smooth transition between manual control and PD controller
+    if (!last_tick_is_controller_active && control_mode != 0){
+        reference_handler_.x_d = x;
+        reference_handler_.q_d = q;
+        last_tick_is_controller_active = true;
+    }
+    else if (control_mode == 0){
+        last_tick_is_controller_active = false;
+    }
 
     if (use_param_file_setpoint){ //If using ROS2 parameter setpoint, override joystick setpoint
         reference_handler_.q_d.w() = ros2_param_attitude_setpoint[0];
@@ -108,24 +119,15 @@ void ControlNode::controller_node_main()
         reference_handler_.x_d[2] = ros2_param_position_setpoint[2];
     }
 
-    //Create smooth transition between manual control and PD controller
-    if (!last_tick_is_controller_active && control_mode != 0){
-        reference_handler_.x_d = x;
-        reference_handler_.q_d = q;
-        last_tick_is_controller_active = true;
-    }
-    else if (control_mode == 0){
-        last_tick_is_controller_active = false;
-    }
+
 
     reference_handler_.q_d.normalize(); //Make sure the quaternion setpoint is normalized
-    q.normalize(); //Make sure the quaternion representation is normalized
 
     // Sample controller
     Eigen::Vector6d tau_controller = Controller_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
     Eigen::Vector6d tau_final; //Variable to be sent for actuation
     for (int i = 0; i < 3; i++){ //Manual input, may be overridden depending on control mode
-        tau_final[i] = joystick_handler_.movement[i] * 40;
+        tau_final[i] = joystick_handler_.movement[i] * 80;
         tau_final[i + 3] = joystick_handler_.movement[i + 3] * 20;
     }
 
