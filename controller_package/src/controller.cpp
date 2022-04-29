@@ -23,7 +23,7 @@ Eigen::Vector6d ControllerClass::main(const Eigen::Quaterniond &q, const Eigen::
 Eigen::Matrix6d ControllerClass::proportionalGain(Eigen::Matrix3d R){
     Eigen::Matrix6d Kp;
     Eigen::Matrix3d zero = Eigen::Matrix3d::Zero();
-    Eigen::Matrix3d I3x3 = Eigen::Matrix3d::Identity();
+    DiagonalMatrix<double, 3> I3x3(2, 2, 1);
 
     Kp << R.transpose() * Kx, zero, zero, c * I3x3;
 
