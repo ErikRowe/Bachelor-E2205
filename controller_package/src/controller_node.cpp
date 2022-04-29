@@ -89,12 +89,10 @@ void ControlNode::controller_node_main()
         }
     }
     //If depth hold, only allow heave movement to change heave setpoint
-    if (control_mode == 2 && !(bool)joystick_handler_.movement[2]){
-        setpoint_changes[2] = false;
+    if (control_mode == 2){
+        setpoint_changes[2] = (bool)joystick_handler_.movement[2];
     }
-    else if (control_mode == 2 && (bool)joystick_handler_.movement[2]){
-        setpoint_changes[2] = true;
-    }
+
     //Check and perform setpoint changes from joystick release
     //Also check if buttons are pressed to activate standard operations
     reference_handler_.update_setpoint(setpoint_changes, joystick_handler_.active_buttons, q, x);
