@@ -17,6 +17,9 @@ df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/roll90_left.csv')
 ### README
 # To change dataset to plot, rename it to df and comment out dataset not in use
 
+start = 1610
+stop = -1
+
 Columns = df.columns 
 
 Time = df[Columns[0]].tolist()
@@ -60,20 +63,20 @@ A5 = df[Columns[37]].tolist()
 A6 = df[Columns[38]].tolist()
 A7 = df[Columns[39]].tolist()
 A8 = df[Columns[40]].tolist()
-print(len(A8[1610:]))
+print(len(A8[start:stop]))
 
-t = np.linspace(0, len(Time) * 0.03, len(Time))
+t = np.linspace(0, len(Time[start:stop]) * 0.03, len(Time[start:stop]))
 ##TODO: FIX TIME AXIS
 
 fig, axs = plt.subplots(2, 4, figsize=(8, 5))
-axs[0,0].plot(t, Q4)#[1610:])
-axs[0,1].plot(t, Q1)#[1610:])
-axs[0,2].plot(t, Q2) #[1610:])
-axs[0,3].plot(t, Q3)#[1610:])
-axs[1,0].plot(t, Q_D4)#[1610:])
-axs[1,1].plot(t, Q_D1)#[1610:])
-axs[1,2].plot(t, Q_D2)#[1610:])
-axs[1,3].plot(t, Q_D3)#[1610:])
+axs[0,0].plot(t, Q4[start:stop])
+axs[0,1].plot(t, Q1[start:stop])
+axs[0,2].plot(t, Q2[start:stop])
+axs[0,3].plot(t, Q3[start:stop])
+axs[1,0].plot(t, Q_D4[start:stop])
+axs[1,1].plot(t, Q_D1[start:stop])
+axs[1,2].plot(t, Q_D2[start:stop])
+axs[1,3].plot(t, Q_D3[start:stop])
 axs[0,0].set_title('w')
 axs[0,1].set_title('x')
 axs[0,2].set_title('y')
