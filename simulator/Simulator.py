@@ -9,7 +9,7 @@ import math
 # Constants
 m = 11.5                    # Kg
 W = 112.8                   # Newton
-B = 114.8                   # Newtons
+B = 114.8                   # Newton
 r_b = np.array([[0],        # m     
                 [0],
                 [0]])
@@ -83,7 +83,8 @@ def D(nu):
 
 
 def Kp(q):
-    return Combine4(R.from_quat(q).as_matrix()*Kx, Zero3x3, Zero3x3, c*I3x3)
+    c_gains = np.array([[c_roll],[c_pitch],[c_yaw]])
+    return Combine4(np.transpose(R.from_quat(q).as_matrix())*Kx, Zero3x3, Zero3x3, c_gains*I3x3)
 
 
 def quatMul(q1, q2):
@@ -110,19 +111,20 @@ Zero4x3 = np.array([[0]*3]*4)
 I3x3 = np.diag([1]*3)
 
 _M11rb = np.array([[m, 0, 0], [0, m, 0], [0, 0, m]])
-#_M12rb = np.array([[0, m*r_g[2][0], 0], [-m*r_g[2][0], 0, 0], [0, 0, 0]])
-#_M21rb = np.array([[0, -m*r_g[2][0], 0], [m*r_g[2][0], 0, 0], [0, 0, 0]])
-_M12rb = Zero3x3
-_M21rb = Zero3x3
+_M12rb = np.array([[0, m*r_g[2][0], 0], [-m*r_g[2][0], 0, 0], [0, 0, 0]])
+_M21rb = np.array([[0, -m*r_g[2][0], 0], [m*r_g[2][0], 0, 0], [0, 0, 0]])
+# _M12rb = Zero3x3
+# _M21rb = Zero3x3
 _M22rb = np.array([[I_x, 0, 0], [0, I_y, 0], [0, 0, I_z]])
-_M11A = -np.array([[X_udot, 0, 0], [0, Y_vdot, 0], [0, 0, Z_wdot]])
+_M11A = np.array([[X_udot, 0, 0], [0, Y_vdot, 0], [0, 0, Z_wdot]])
 _M12A = Zero3x3
 _M21A = Zero3x3
 _M22A = np.array([[K_pdot, 0, 0], [0, M_qdot, 0], [0, 0, N_rdot]])
 Mrb = Combine4(_M11rb, _M12rb, _M21rb, _M22rb)
-MA = Combine4(_M11A,_M12A,_M21A,_M22A)
+MA = -Combine4(_M11A,_M12A,_M21A,_M22A)
 M = Mrb + MA
 _M11, _M12, _M21, _M22 = split(M,3,3)
+
 
 # os.remove('C:\Users\elias\Documents\Debugging\v.txt')
 # os.remove('C:\Users\elias\Documents\Debugging\q.txt')
@@ -154,7 +156,7 @@ def f(zeta,t):
     zeta11 = np.concatenate([R.from_quat(q).as_matrix(), Zero3x3], axis=1)
     zeta22 = np.concatenate([Zero4x3, 1/2*U(q)], axis=1)
     zetaDot = np.concatenate([zeta11, zeta22])@v
-    vDot = -np.linalg.inv(M)@(C(v)@v+D(v)@v+Kd@v+Kp(q)@z)
+    vDot = np.linalg.inv(M)@(-C(v)@v-D(v)@v-Kd@v-Kp(q)@z)
     xDot = np.concatenate([zetaDot, vDot])
 
     return xDot
@@ -223,19 +225,20 @@ zeta0 = np.concatenate([x_init, q_init, v_init])
 
 
 ## Desired position and attitude
-x_d = np.array([0, 0, 0])
-q_d = np.array(get_quaternion_from_euler(0,0,90)) 
-print(q_d)
-
+x_d = np.array([0, 0,0])
+q_d = np.array(get_quaternion_from_euler(0,45,0))
 ################## Simulation ##################################################################################### 
 start_time = 0
-end_time = 2
+end_time = 15
 stepsize = round(end_time/0.03) #5/x = 0.03 => end_time/0.03
 t = np.linspace(start_time,end_time,stepsize)  # gjør om slik at det samples hver 30ms = 0.03 s
 
-Kx = 1
-c  = 40
-Kd = 1*np.diag([1]*6)
+Kx = 0
+c_yaw = 20
+c_roll  = c_yaw * 2
+c_pitch = c_yaw * 2
+ 
+Kd = 5*np.diag([1]*6)
 sim = odeint(f,zeta0,t)
 ###################################################################################################################
 
@@ -302,7 +305,7 @@ for ax in axs:
 #     ax.grid()
 #     ax.set_xlabel('t [s]')
 
-### PITCH ###
+# ### PITCH ###
 # fig, axs = plt.subplots(1, 2, figsize=(8, 5))
 # axs[0].plot(t, pitch_speed)
 # axs[1].plot(t, euler_pitch)
@@ -314,7 +317,7 @@ for ax in axs:
 #     ax.grid()
 #     ax.set_xlabel('t [s]')
 
-### ROLL ###
+# ### ROLL ###
 # fig, axs = plt.subplots(1, 2, figsize=(8, 5))
 # axs[0].plot(t, roll_speed)
 # axs[1].plot(t, euler_roll)
@@ -356,7 +359,7 @@ for ax in axs:
 
 
 
-# 2D Attitude
+# # 2D Attitude
 # fig, axs = plt.subplots(1, 3, figsize=(8, 5))
 # axs[0].set_ylabel('x [grader]')
 # axs[0].set_title('Roll')
@@ -372,17 +375,17 @@ for ax in axs:
 #     ax.grid()
 #     ax.set_xlabel('t [s]')
 
-# 3D Position
-# fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-# ax.set_xlabel('x [m]')
-# ax.set_ylabel('y [m]')
-# ax.set_zlabel('z [m]')
-# ax.set_xlim([0,10])
-# ax.set_ylim([0,10])
-# ax.set_zlim([0,10])
-# ax.plot3D(surge, sway, heave)
+# # 3D Position
+# # fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+# # ax.set_xlabel('x [m]')
+# # ax.set_ylabel('y [m]')
+# # ax.set_zlabel('z [m]')
+# # ax.set_xlim([0,10])
+# # ax.set_ylim([0,10])
+# # ax.set_zlim([0,10])
+# # ax.plot3D(surge, sway, heave)
 
-# 2D Position
+# # 2D Position
 # fig, axs = plt.subplots(1, 3, figsize=(20, 8))
 # axs[0].set_ylabel('x [m]')
 # axs[0].set_title('Surge')
@@ -397,5 +400,5 @@ for ax in axs:
 # for ax in axs:
 #     ax.grid()
 #     ax.set_xlabel('t [s]')
-#     ax.set_ylim([-2, 2])
+    #ax.set_ylim([-2, 2])
 plt.show()

@@ -7,7 +7,7 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
       scaling_linear_proportional_gain(declare_parameter<double>("Proportional_gain_linear", 0.0)),
       scaling_angular_proportional_gain(declare_parameter<double>("Proportional_gain_angular", 0.0)),
       scaling_derivative_gain(declare_parameter<double>("Derivative_gain", 0.0)),
-      use_param_file_setpoint(declare_parameter<bool>("Setpoint_input_mode", false)),
+      use_param_file_setpoint(declare_parameter<bool>("Use_param_file_setpoint", false)),
       use_imu_directly(declare_parameter<bool>("Use_imu_directly", false)),
       control_mode(declare_parameter<int>("Control_mode", 0)),
       world_frame_type(declare_parameter<int>("World_frame_type", 0)),
@@ -25,11 +25,11 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
       "bno055/imu", 10, std::bind(&ControlNode::imu_callback, this, _1));
 
     //Activate publishers
-    act_pub_ = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/actuation", 10);
+    act_pub_ = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/bluerov/u", 10);
     act_pub_br2 = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/actuation/bluerov2_standard", 10);
 
     //Activate timers
-    SampleTimer_ = this->create_wall_timer(30ms, std::bind(&ControlNode::controller_node_main, this));
+    SampleTimer_ = this->create_wall_timer(25ms, std::bind(&ControlNode::controller_node_main, this));
     ROS2ParamTimer_ = this->create_wall_timer(1000ms, std::bind(&ControlNode::get_ros2_params, this));
 }
 
@@ -54,10 +54,12 @@ void ControlNode::estimate_callback(const nav_msgs::msg::Odometry msg){
     auto lin = msg.twist.twist.linear;
     auto ang = msg.twist.twist.angular;
     if (!use_imu_directly){
-        x = Eigen::Vector3d(pos.x, pos.y, pos.z);
+        // x = Eigen::Vector3d(pos.x, pos.y, pos.z);
+        x = Eigen::Vector3d::Zero();
         q = Eigen::Quaterniond(att.w, att.x, att.y, att.z);
         q.normalize();
-        v << lin.x, lin.y, lin.z, ang.x, ang.y, ang.z;
+        // v << lin.x, lin.y, lin.z, ang.x, ang.y, ang.z;
+        v << 0, 0, 0, ang.x, ang.y, ang.z;
     }
 }
 
@@ -75,20 +77,37 @@ void ControlNode::imu_callback(const sensor_msgs::msg::Imu msg){
 void ControlNode::controller_node_main()
 {
     //Logic to allow setpoint changes when releasing joystick
-    static std::vector<bool> setpoint_changes = {0, 0, 0, 0, 0, 0};
-    for (int i = 0; i < 6; i++){
-        active_actions[i] = (bool)joystick_handler_.movement[i];
+    std::vector<bool> setpoint_changes = {0, 0, 0, 0, 0, 0};
+    Eigen::Matrix3d R = q.toRotationMatrix();
+    Eigen::Vector3d I_frame_lin = R * Eigen::Vector3d(joystick_handler_.movement[0] * 40, joystick_handler_.movement[1] * 40, joystick_handler_.movement[2] * 40);
+    for (int i = 0; i < 3; i++){
+        active_actions[i] = (bool)I_frame_lin [i];
+        active_actions[i + 3] = (bool)joystick_handler_.movement[i + 3];
         if (!active_actions[i] && last_tick_active_actions[i]){
             setpoint_changes[i] = true;
         }
-        else{
-            setpoint_changes[i] = false;
+        if (!active_actions[i + 3] && last_tick_active_actions[i + 3]){
+            setpoint_changes[i + 3] = true;
         }
     }
+    //If depth hold, only allow heave movement to change heave setpoint
+    if (control_mode == 2){
+        setpoint_changes[2] = (bool)joystick_handler_.movement[2];
+    }
+
     //Check and perform setpoint changes from joystick release
     //Also check if buttons are pressed to activate standard operations
-    reference_handler_.update_setpoint(&setpoint_changes, &joystick_handler_.active_buttons, q, x);
+    reference_handler_.update_setpoint(setpoint_changes, joystick_handler_.active_buttons, q, x);
 
+    //Create smooth transition between manual control and PD controller
+    if (!last_tick_is_controller_active && control_mode != 0){
+        reference_handler_.x_d = x;
+        reference_handler_.q_d = q;
+        last_tick_is_controller_active = true;
+    }
+    else if (control_mode == 0){
+        last_tick_is_controller_active = false;
+    }
 
     if (use_param_file_setpoint){ //If using ROS2 parameter setpoint, override joystick setpoint
         reference_handler_.q_d.w() = ros2_param_attitude_setpoint[0];
@@ -100,18 +119,9 @@ void ControlNode::controller_node_main()
         reference_handler_.x_d[2] = ros2_param_position_setpoint[2];
     }
 
-    //Create smooth transition between manual control and PD controller
-    if (!last_tick_is_controller_active && control_mode != 0){
-        reference_handler_.x_d = x;
-        reference_handler_.q_d = q;
-        last_tick_is_controller_active = true;
-    }
-    else{
-        last_tick_is_controller_active = false;
-    }
+
 
     reference_handler_.q_d.normalize(); //Make sure the quaternion setpoint is normalized
-    q.normalize(); //Make sure the quaternion representation is normalized
 
     // Sample controller
     Eigen::Vector6d tau_controller = Controller_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
@@ -122,14 +132,31 @@ void ControlNode::controller_node_main()
     }
 
     switch (control_mode){
-        case (0): // Manual control
+        case 0: // Manual control
             break;
-        case (1): // PD Control
+        case 1: // PD Control
             for (int i = 0; i < 6; i++){
-                if (!active_actions[i]){ // If joystick is active, use manual input, else use controller
+                if (!(bool)joystick_handler_.movement[i]){ // If joystick is active, use manual input, else use controller
                     tau_final[i] = tau_controller[i];
                 }
             }
+            break;
+        case 2: //PD Control Depth Hold
+            if (!setpoint_changes[2]){
+                I_frame_lin[2] = 0;
+            }
+            else if ((bool)joystick_handler_.movement[2]){
+                Eigen::Vector3d I_frame_heave = R * Eigen::Vector3d(0, 0, joystick_handler_.movement[2] * 40);
+                I_frame_lin[0] -= I_frame_heave[0];
+                I_frame_lin[1] -= I_frame_heave[1];
+            }
+            tau_final << R.transpose() * I_frame_lin, tau_final[3], tau_final[4], tau_final[5];
+            for (int i = 0; i < 6; i++){
+                if (!(bool)joystick_handler_.movement[i]){ // If joystick is active, use manual input, else use controller
+                    tau_final[i] = tau_controller[i];
+                }
+            }
+            break;
     }
 
     bluerov2_standard_actuation(tau_final); //Send actuation to topic accessed by bluerov2_communication node

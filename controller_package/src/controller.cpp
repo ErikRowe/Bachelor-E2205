@@ -23,7 +23,8 @@ Eigen::Vector6d ControllerClass::main(const Eigen::Quaterniond &q, const Eigen::
 Eigen::Matrix6d ControllerClass::proportionalGain(Eigen::Matrix3d R){
     Eigen::Matrix6d Kp;
     Eigen::Matrix3d zero = Eigen::Matrix3d::Zero();
-    Eigen::Matrix3d I3x3 = Eigen::Matrix3d::Identity();
+    Eigen::Matrix3d I3x3;
+    I3x3.diagonal() << 2, 2, 1;
 
     Kp << R.transpose() * Kx, zero, zero, c * I3x3;
 
@@ -51,7 +52,7 @@ Eigen::Vector6d ControllerClass::getErrorVector(const Eigen::Quaterniond &q, con
 
 void ControllerClass::update_params(double _Kx,double _Kd, std::vector<double> _rG, std::vector<double> _rB,
                                     double _W, double _B, double _c, int _control_mode)
-{
+{   
     Kx = Eigen::Matrix3d::Identity() * _Kx;
     Kd = Eigen::Matrix6d::Identity() * _Kd;
     rg = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(_rG.data(), _rG.size());
