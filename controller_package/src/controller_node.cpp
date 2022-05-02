@@ -54,8 +54,8 @@ void ControlNode::estimate_callback(const nav_msgs::msg::Odometry msg){
     auto lin = msg.twist.twist.linear;
     auto ang = msg.twist.twist.angular;
     if (!use_imu_directly){
-        x = Eigen::Vector3d(pos.x, pos.y, pos.z);
-        // x = Eigen::Vector3d::Zero();
+        // x = Eigen::Vector3d(pos.x, pos.y, pos.z);
+        x = Eigen::Vector3d::Zero();
         q = Eigen::Quaterniond(att.w, att.x, att.y, att.z);
         q.normalize();
         // v << lin.x, lin.y, lin.z, ang.x, ang.y, ang.z;
@@ -127,7 +127,7 @@ void ControlNode::controller_node_main()
     Eigen::Vector6d tau_controller = Controller_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
     Eigen::Vector6d tau_final; //Variable to be sent for actuation
     for (int i = 0; i < 3; i++){ //Manual input, may be overridden depending on control mode
-        tau_final[i] = joystick_handler_.movement[i] * 80;
+        tau_final[i] = joystick_handler_.movement[i] * 40;
         tau_final[i + 3] = joystick_handler_.movement[i + 3] * 20;
     }
 

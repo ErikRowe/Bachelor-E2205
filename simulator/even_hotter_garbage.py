@@ -3,22 +3,23 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 # 0 = Time, 1 = T1 ... 7 = Z1, ... 13 = Q1, ... 17 = Q1_D, ..., 21 = X1, ... 24 = X1_D, ... 27 = V1, ... #34 = A1
-#df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/45pitch_noseup.csv') #fra 1606
+# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/45pitch_noseup.csv') # fra 1606
 # pitch_noseup90 = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/90pitch_noseup.csv')
 # pitch_nosedown90 = 0 #TODO: Convert to CSV
-#df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/45yaw.csv')
-# yaw90 = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/90yaw.csv')
+# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/45yaw.csv')
+# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/90yaw.csv')
 # df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/135yaw.csv', skiprows=1)
-# yaw180 = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/180yaw.csv')
-#df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/roll90_left.csv')
-#df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/roll90_right.csv')
-# video_example = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/video_example.csv')
-df = pd.read_csv('/home/elias/bs_ws/Data Logging/modified_ROV/90roll.xlsx',skiprows=1)
+# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/180yaw.csv')
+# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/roll90_left.csv')
+# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/roll90_right.csv')
+# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/video_example.csv')
+df = pd.read_csv('/home/elias/bs_ws/new/sexy.xlsx',skiprows=1)
+
 ### README
 # To change dataset to plot, rename it to df and comment out dataset not in use
 
-start = 400
-stop = -1
+start = 10000
+stop = 10300
 
 Columns = df.columns 
 
@@ -35,10 +36,10 @@ Z3 = df[Columns[9]].tolist()
 Z4 = df[Columns[10]].tolist()
 Z5 = df[Columns[11]].tolist()
 Z6 = df[Columns[12]].tolist()
-Q1 = df[Columns[13]].tolist()
-Q2 = df[Columns[14]].tolist()
-Q3 = df[Columns[15]].tolist()
-Q4 = df[Columns[16]].tolist()
+Q1 = df[Columns[13]].tolist() #x
+Q2 = df[Columns[14]].tolist() #y
+Q3 = df[Columns[15]].tolist() #z
+Q4 = df[Columns[16]].tolist() #w
 Q_D1 = df[Columns[17]].tolist() #x
 Q_D2 = df[Columns[18]].tolist() #y
 Q_D3 = df[Columns[19]].tolist() #z

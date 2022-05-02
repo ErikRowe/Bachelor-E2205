@@ -56,9 +56,10 @@ class BlueROV2CommNode(Node):
         # Loop through and cap pwm signals at 1700/1300 (40 * 5 = 200. 1500 +- 200 = 1700 / 1300)
         for signal in pwm_signals:
             num = signal
-            if signal > 40: num = 40
-            if signal < -40: num = -40
-            result.append((int)(1500 + 5 * num))
+            limit = 20
+            if signal > limit: num = limit
+            if signal < -limit: num = -limit
+            result.append((int)(1500 + 200/limit * num))
         
         # Loop through and append desired pwm signal to channels. Unused channels are ignored
         rc_channel_values = [65535 for _ in range(18)]

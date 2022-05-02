@@ -67,7 +67,6 @@ class ControllerClass{
         int signum(double x);
         
         Eigen::Matrix3d Kx;         //Scaling of linear proportional gain
-        Eigen::Matrix3d Kxi;        //Scaling of linear integral gain
         Eigen::Matrix6d Kd;         //Scaling of derivative gain
         Eigen::Vector3d rg;         //Centre of gravity
         Eigen::Vector3d rb;         //Centre of buoyancy

@@ -52,7 +52,7 @@ Eigen::Vector6d ControllerClass::getErrorVector(const Eigen::Quaterniond &q, con
 
 void ControllerClass::update_params(double _Kx,double _Kd, std::vector<double> _rG, std::vector<double> _rB,
                                     double _W, double _B, double _c, int _control_mode)
-{
+{   
     Kx = Eigen::Matrix3d::Identity() * _Kx;
     Kd = Eigen::Matrix6d::Identity() * _Kd;
     rg = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(_rG.data(), _rG.size());
