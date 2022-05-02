@@ -9,7 +9,7 @@ import math
 # Constants
 m = 11.5                    # Kg
 W = 112.8                   # Newton
-B = 114.8                   # Newtons
+B = 114.8                   # Newton
 r_b = np.array([[0],        # m     
                 [0],
                 [0]])
@@ -124,6 +124,7 @@ Mrb = Combine4(_M11rb, _M12rb, _M21rb, _M22rb)
 MA = -Combine4(_M11A,_M12A,_M21A,_M22A)
 M = Mrb + MA
 _M11, _M12, _M21, _M22 = split(M,3,3)
+
 
 # os.remove('C:\Users\elias\Documents\Debugging\v.txt')
 # os.remove('C:\Users\elias\Documents\Debugging\q.txt')

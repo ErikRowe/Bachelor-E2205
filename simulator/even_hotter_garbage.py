@@ -1,25 +1,16 @@
 import csv
+from time import time
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-# 0 = Time, 1 = T1 ... 7 = Z1, ... 13 = Q1, ... 17 = Q1_D, ..., 21 = X1, ... 24 = X1_D, ... 27 = V1, ... #34 = A1
-# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/45pitch_noseup.csv') # fra 1606
-# pitch_noseup90 = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/90pitch_noseup.csv')
-# pitch_nosedown90 = 0 #TODO: Convert to CSV
-# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/45yaw.csv')
-# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/90yaw.csv')
-# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/135yaw.csv', skiprows=1)
-# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/180yaw.csv')
-# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/roll90_left.csv')
-# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/roll90_right.csv')
-# df = pd.read_csv('/home/elias/bs_ws/Data Logging/csv/video_example.csv')
-df = pd.read_csv('/home/elias/bs_ws/new/sexy.xlsx',skiprows=1)
 
 ### README
-# To change dataset to plot, rename it to df and comment out dataset not in use
+# To change dataset to plot, change path in df
 
-start = 10000
-stop = 10300
+df = pd.read_csv('/home/elias/bs_ws/Data Logging/vanilla_ROV/new/90yaw.xlsx',skiprows=1)
+
+start = 0
+stop = -1
 
 Columns = df.columns 
 
@@ -64,10 +55,8 @@ A5 = df[Columns[37]].tolist()
 A6 = df[Columns[38]].tolist()
 A7 = df[Columns[39]].tolist()
 A8 = df[Columns[40]].tolist()
-print(len(A8[start:stop]))
 
 t = np.linspace(0, len(Time[start:stop]) * 0.025, len(Time[start:stop]))
-##TODO: FIX TIME AXIS
 
 fig, axs = plt.subplots(2, 4, figsize=(8, 5))
 axs[0,0].plot(t, Q4[start:stop])
