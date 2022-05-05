@@ -119,3 +119,30 @@ sudo netplan apply
 export ROS_DOMAIN_ID=1
 sudo ifconfig lo multicast
 ```
+
+
+# Koble til Vortex
+
+Topics:
+
+/thrust/desired_forces (tar inn tau og aktuerer dronen)
+/odometry/filtered (sender ut odom med estimat)
+
+Koble til dronen:
+ssh ubuntu@192.168.1.4
+pass: spør erik
+
+Start ros master på dronen:
+export ROS_ID=192.168.1.4
+export ROS_HOSTNAME=192.168.1.4
+roslaunch auv_setup beluga_launch (elns)
+
+
+Start ros1 bridge på pc:
+source ${ROS1_INSTALL_PATH}/setup.bash
+source ${ROS2_INSTALL_PATH}/setup.bash
+source ~/ROS/Bridge/install/setup.bash
+export ROS_ID=192.168.1.2
+export ROS_HOSTNAME=192.168.1.2
+export ROS_MASTER_URI=http://192.168.1.4:11311
+ros2 run ros1_bridge dynamic_bridge --bridge-all-topics
