@@ -11,12 +11,24 @@ Eigen::Vector6d ControllerClass::main(const Eigen::Quaterniond &q, const Eigen::
     
     Eigen::Vector3d fg = R.transpose() * Eigen::Vector3d(0, 0, W);
     Eigen::Vector3d fb = R.transpose() * Eigen::Vector3d(0, 0, B);
+  
+    Eigen::Matrix6d Ki = integralGain(R);
+    integral += Ki * z;
+  
+    for (int i = 0; i < 3; i++){
+      if (abs(integral[i]) > windup_linear){
+        integral[i] = signum(integral[i]) * windup_linear;
+      }
+      if (abs(integral[i + 3]) > windup_angular){
+        integral[i + 3] = signum(integral[i + 3]) * windup_angular;
+      }
+    }
 
     Eigen::Vector6d g;
     Eigen::Vector6d tau;
     g << fb - fg, rb.cross(fb) - rg.cross(fg);
 
-    tau = -Kd * v - Kp * z + g;
+    tau = -Kd * v - Kp * z + g - integral;
     return tau;
 }
 
@@ -29,6 +41,17 @@ Eigen::Matrix6d ControllerClass::proportionalGain(Eigen::Matrix3d R){
     Kp << R.transpose() * Kx, zero, zero, c * I3x3;
 
     return Kp;
+}
+
+Eigen::Matrix6d ControllerClass::integralGain(Eigen::Matrix3d R){
+    Eigen::Matrix6d Ki;
+    Eigen::Matrix3d zero = Eigen::Matrix3d::Zero();
+    Eigen::Matrix3d I3x3;
+    I3x3.diagonal() << 2, 2, 1;
+
+    Ki << R.transpose() * Kx_i, zero, zero, c_i * I3x3;
+
+    return Ki;
 }
 
 int ControllerClass::signum(double x){
@@ -61,5 +84,10 @@ void ControllerClass::update_params(double _Kx,double _Kd, std::vector<double> _
     B = _B;
     c = _c;
     control_mode = _control_mode;
+  
+    Kx_i = Kx;
+    c_i = c / 10;
+    windup_linear = 10.0;
+    windup_angular = 10.0;
 }
 
