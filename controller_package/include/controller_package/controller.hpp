@@ -57,6 +57,16 @@ class ControllerClass{
          * 
          */
         Eigen::Matrix6d proportionalGain(Eigen::Matrix3d R);
+    
+        /**
+         * @brief Calculates integral gain
+         * 
+         * @param R Current attitude as rotational matrix
+         * 
+         * @return Integral gain as 6x6 matrix
+         * 
+         */
+        Eigen::Matrix6d integralGain(Eigen::Matrix3d R);
 
         /**
          * @brief Finds the sign of a value
@@ -74,4 +84,10 @@ class ControllerClass{
         double B;                   //Weight and buoyancy
         double c;                   //Scaling constant for angular proportional gain
         int control_mode;           //Type of control (open loop, PD etc)
+
+        Eigen::Matrix3d Kx_i;       //Scaling of linear integral gain
+        Eigen::Vector6d integral;   //Stores integrated value
+        double c_i;                 //Scaling constant for angular integral gain
+        double windup_linear;       //Maximum value for linear integrator gain
+        double windup_angular;      //Maximum value for angular integrator gain
 };
