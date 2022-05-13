@@ -57,6 +57,9 @@ class ControlNode : public rclcpp::Node
         Eigen::Vector6d tau_logging = Eigen::Vector6d::Zero();                              // Save tau as a class variable to be used for logging
         Eigen::Vector6d z_logging = Eigen::Vector6d::Zero();                                // Save z as a class variable to be used for logging
         std::vector<float> joy_axes_logging = {0, 0, 0, 0, 0, 0, 0, 0};                     // Save axes inputs as a class variable to be used for logging
+        bool activateD = false;
+        bool last_tick_logg_button_active = false;
+        bool enable = true;
 
         // ROS2 Parameters
         double buoyancy;

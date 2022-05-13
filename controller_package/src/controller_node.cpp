@@ -205,7 +205,28 @@ void ControlNode::bluerov2_standard_actuation(Eigen::Vector6d tau){
 void ControlNode::logging()
 {
     rclcpp::Time time = clock_.now(); //Get current timestamp
-    Logg_.data_logger(tau_logging, z_logging, q, reference_handler_.q_d, x, reference_handler_.x_d, v, joy_axes_logging, time.seconds());
+    if (joystick_handler.active_buttons[1] && !last_tick_logg_button_active){
+        activateD = !activateD;
+    }
+    last_tick_logg_button_active = joystick_handler.active_buttons[1];
+    
+    if (activateD == true && enable == false)           //Count teller up by one everytime activateD is true
+    {
+        enable = true;
+        Logg_.teller +=1;
+        Logg_.OnlyOnce = true;
+    }
+    else if (activateD == false)
+    {
+        enable = false;
+    }
+
+
+    if (activateD == true)
+    {
+        Logg_.data_logger2(tau_logging, z_logging, q, reference_handler_.q_d, x, reference_handler_.x_d, v, joy_axes_logging, Logg_.teller, Logg_.buffer2);    
+    }
+    Logg_.data_logger(tau_logging, z_logging, q, reference_handler_.q_d, x, reference_handler_.x_d, v, joy_axes_logging, time.seconds(), Logg_.buffer);
 }
 
 void ControlNode::get_ros2_params(){
