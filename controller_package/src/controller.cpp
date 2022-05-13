@@ -24,6 +24,10 @@ Eigen::Vector6d ControllerClass::main(const Eigen::Quaterniond &q, const Eigen::
       }
     }
 
+    if (!use_integrator){ //Disconnect integrator
+      integral = Eigen::Vector6d::Zero();
+    }
+
     Eigen::Vector6d g;
     Eigen::Vector6d tau;
     g << fb - fg, rb.cross(fb) - rg.cross(fg);
@@ -74,7 +78,8 @@ Eigen::Vector6d ControllerClass::getErrorVector(const Eigen::Quaterniond &q, con
 }
 
 void ControllerClass::update_params(double _Kx,double _Kd, std::vector<double> _rG, std::vector<double> _rB,
-                                    double _W, double _B, double _c, int _control_mode)
+                                    double _W, double _B, double _c, bool _use_integrator,
+                                    double _Kx_i, double _c_i, double _w_lin, double _w_ang)
 {   
     Kx = Eigen::Matrix3d::Identity() * _Kx;
     Kd = Eigen::Matrix6d::Identity() * _Kd;
@@ -83,11 +88,11 @@ void ControllerClass::update_params(double _Kx,double _Kd, std::vector<double> _
     W = _W;
     B = _B;
     c = _c;
-    control_mode = _control_mode;
+    use_integrator = _use_integrator;
   
-    Kx_i = Kx;
-    c_i = c / 10;
-    windup_linear = 10.0;
-    windup_angular = 10.0;
+    Kx_i = Eigen::Matrix3d::Identity() * _Kx_i;
+    c_i = _c_i;
+    windup_linear = _w_lin;
+    windup_angular = _w_ang;
 }
 

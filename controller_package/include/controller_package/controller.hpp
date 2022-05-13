@@ -22,17 +22,22 @@ class ControllerClass{
         /**
          * @brief Function updates the parameters of the controller from params.yaml
          * 
-         * @param _Kx 
-         * @param _Kd 
-         * @param _rG 
-         * @param _rB 
-         * @param _W 
-         * @param _B 
-         * @param _c
-         * @param _control_mode
+         * @param _Kx               //Linear proportional gain
+         * @param _Kd               //Derivative gain
+         * @param _rG               //Centre of gravity
+         * @param _rB               //Centre of buoyancy
+         * @param _W                //Weight
+         * @param _B                //Buoyancy
+         * @param _c                //Angular proportional gain
+         * @param _use_integrator   //Bool to check if using integrator
+         * @param _Kx_i             //Linear integrator gain
+         * @param _c_i              //Angular integrator gain
+         * @param _w_lin            //Linear max windup
+         * @param _w_ang            //Angular max windup
          */
         void update_params(double _Kx, double _Kd, std::vector<double> _rG, std::vector<double> _rB,
-                           double _W, double _B, double _c, int _control_mode);
+                           double _W, double _B, double _c, bool _use_integrator,
+                           double _Kx_i, double _c_i, double _w_lin, double _w_ang);
 
         /**
          * @brief Uses position and attitude to compute an error vector
@@ -83,7 +88,7 @@ class ControllerClass{
         double W;                   //Gravitational force mg
         double B;                   //Weight and buoyancy
         double c;                   //Scaling constant for angular proportional gain
-        int control_mode;           //Type of control (open loop, PD etc)
+        bool use_integrator;        //Bool to see if integrator should be connected (MAY BE UNSTABLE)
 
         Eigen::Matrix3d Kx_i;       //Scaling of linear integral gain
         Eigen::Vector6d integral;   //Stores integrated value

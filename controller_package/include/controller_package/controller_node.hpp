@@ -14,6 +14,7 @@
 #include <sensor_msgs/msg/imu.hpp>
 #include <geometry_msgs/msg/point.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/wrench.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 
 // Control group includes
@@ -42,6 +43,7 @@ class ControlNode : public rclcpp::Node
         rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;                    // Subscribes to joy input
         rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_;     // Publishes actuation message
         rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_br2;  // Publishes actuation message to standard bluerov2
+        rclcpp::Publisher<geometry_msgs::msg::Wrench >::SharedPtr vortex_pub;
         rclcpp::TimerBase::SharedPtr SampleTimer_;                                          // Timer to sample node main function
         rclcpp::TimerBase::SharedPtr ROS2ParamTimer_;                                       // Timer to update from ROS2 params
         rclcpp::Clock clock_;                                                               // Makes a clock for ros2
@@ -59,19 +61,24 @@ class ControlNode : public rclcpp::Node
         std::vector<float> joy_axes_logging = {0, 0, 0, 0, 0, 0, 0, 0};                     // Save axes inputs as a class variable to be used for logging
 
         // ROS2 Parameters
-        double buoyancy;
-        double weight;
-        double scaling_linear_proportional_gain;
-        double scaling_angular_proportional_gain;
-        double scaling_derivative_gain;
         bool use_param_file_setpoint;
         bool use_imu_directly;
         int control_mode;
         int world_frame_type;
-        std::vector<double> centre_of_gravity;
-        std::vector<double> centre_of_buoyancy;
         std::vector<double> ros2_param_attitude_setpoint;
         std::vector<double> ros2_param_position_setpoint;
+        double weight;
+        double buoyancy;
+        std::vector<double> centre_of_gravity;
+        std::vector<double> centre_of_buoyancy;
+        double scaling_linear_proportional_gain;
+        double scaling_angular_proportional_gain;
+        double scaling_linear_integral_gain;
+        double scaling_angular_integral_gain;
+        double scaling_derivative_gain;
+        double max_windup_linear;
+        double max_windup_angular;
+        bool use_integrator;
 
 
         //Initialization of local variables
@@ -81,6 +88,7 @@ class ControlNode : public rclcpp::Node
         bool last_tick_is_controller_active = false;                    //Variable to compare controller activity
         std::vector<bool> last_tick_active_actions = {false, false, false, false, false, false};          //Tracker if last tick had action input
         std::vector<bool> active_actions = {false, false, false, false, false, false};                    //Tracker if current tick has action input
+        Eigen::Vector6d setpoint_changes;                                                               //Tracker for which actions are eligible for setpoint change
 
 
         /**
@@ -116,6 +124,7 @@ class ControlNode : public rclcpp::Node
          * @param tau sixD vector containing angular[3] and linear[3] movement (forces)
          */
         void send_actuation(Eigen::Vector6d tau);
+        void send_vortex(Eigen::Vector6d tau);
 
         
         /**

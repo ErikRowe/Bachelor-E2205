@@ -1,6 +1,6 @@
 #include "controller_package/controller_reference.hpp"
 
-void ReferenceClass::update_setpoint(std::vector<bool> setpoint_changes, std::vector<bool> buttons,
+void ReferenceClass::update_setpoint(Eigen::Vector6d &setpoint_changes, std::vector<bool> buttons,
                                      const Eigen::Quaterniond &q, const Eigen::Vector3d &x){
     
     Eigen::Vector3d setpoint_change_lin = x; //Copy current postion
@@ -25,27 +25,31 @@ void ReferenceClass::update_setpoint(std::vector<bool> setpoint_changes, std::ve
 
 
 void ReferenceClass::handle_button_input(Eigen::Vector3d &setpoint_change_lin, Eigen::Quaterniond &setpoint_change_att,
-                                         std::vector<bool> buttons, std::vector<bool> setpoint_changes){
+                                         std::vector<bool> buttons, Eigen::Vector6d  &setpoint_changes){
     
     auto reset_attitude = [&](){
         setpoint_change_att = Eigen::Quaterniond(1, 0, 0, 0);
+        setpoint_changes[3] = true; //Allow orientation setpoint to be changed
         setpoint_changes[4] = true; //Allow orientation setpoint to be changed
+        setpoint_changes[5] = true; //Allow orientation setpoint to be changed
         return 0;
     };
     
-    auto yaw_step = [&](){
-        setpoint_change_att *= Eigen::AngleAxisd(0, Eigen::Vector3d::UnitX())
-                             *Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY())
-                             *Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitZ());//If any orientational direction is eligible, perform setpoint change
-        setpoint_changes[4] = true; //Allow orientation setpoint to be changed
-        return 0;
-    };
+    // auto yaw_step = [&](){
+    //     setpoint_change_att *= Eigen::AngleAxisd(0, Eigen::Vector3d::UnitX())
+    //                          *Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY())
+    //                          *Eigen::AngleAxisd(M_PI / 3, Eigen::Vector3d::UnitZ());//If any orientational direction is eligible, perform setpoint change
+    //     setpoint_changes[3] = true; //Allow orientation setpoint to be changed
+    //     setpoint_changes[4] = true; //Allow orientation setpoint to be changed
+    //     setpoint_changes[5] = true; //Allow orientation setpoint to be changed
+    //     return 0;
+    // };
 
     setpoint_change_lin = setpoint_change_lin; //Remove unused variable error
 
     //Array with action-functions to loop through
     //Needs to correspond to active_buttons in joy_to_action.cpp
-    std::vector<std::function<int()>> actions = {reset_attitude, yaw_step};
+    std::vector<std::function<int()>> actions = {reset_attitude};
     int counter = 1;
     //Loops through button inputs and corresponding action functions
     for (auto &action : actions){
