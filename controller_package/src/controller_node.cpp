@@ -228,10 +228,10 @@ void ControlNode::bluerov2_standard_actuation(Eigen::Vector6d tau){
 void ControlNode::logging()
 {
     rclcpp::Time time = clock_.now(); //Get current timestamp
-    if (joystick_handler.active_buttons[1] && !last_tick_logg_button_active){
+    if (joystick_handler_.active_buttons[1] && !last_tick_logg_button_active){
         activateD = !activateD;
     }
-    last_tick_logg_button_active = joystick_handler.active_buttons[1];
+    last_tick_logg_button_active = joystick_handler_.active_buttons[1];
     
     if (activateD == true && enable == false)           //Count teller up by one everytime activateD is true
     {
