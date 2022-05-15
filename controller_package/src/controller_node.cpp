@@ -196,8 +196,8 @@ void ControlNode::get_ros2_params(){
     this->get_parameter("Load_setpoint_from_topic", use_ROS2_topic_as_setpoint);
     this->get_parameter("Enable_controller", enable_controller);
     this->get_parameter("Compensate_NED", compensate_NED);
-    this->get_parameter("Use_linear_control_xy", use_linear_control_xy);
-    this->get_parameter("Use_linear_control_z", use_linear_control_z);
+    this->get_parameter("Linear_control_xy", use_linear_control_xy);
+    this->get_parameter("Linear_control_z", use_linear_control_z);
     this->get_parameter("Manual_control_scaling", m_scale);
 
     //Controller parameters
