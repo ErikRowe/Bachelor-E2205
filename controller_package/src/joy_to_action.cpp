@@ -15,12 +15,12 @@ void UserJoystickInput::joystickToActions(const std::vector<float> axes_input, c
     double surge    = axes.find("LStickUD")->second;
     double sway     = axes.find("LStickLR")->second;
     double heave    = (axes.find("RTrigger")->second - axes.find("LTrigger")->second)/2;
-    double roll     = (double)((int)buttons.find("LBumper")->second - (int)buttons.find("RBumper")->second);
+    double roll     = (double)((int)buttons.find("RBumper")->second - (int)buttons.find("LBumper")->second);
     double pitch    = axes.find("RStickUD")->second;
     double yaw      = axes.find("RStickLR")->second;
     movement = {surge, sway, heave, roll, pitch, yaw};
 
     bool reset_attitude     = buttons.find("A")->second;
-    bool yaw_step           = buttons.find("B")->second;
-    active_buttons = {reset_attitude, yaw_step};
+    bool toggle_logging      = buttons.find("B")->second;
+    active_buttons = {reset_attitude, toggle_logging};
 }
