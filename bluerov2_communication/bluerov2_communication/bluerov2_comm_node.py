@@ -3,7 +3,7 @@ import rclpy
 from rclpy.node import Node
 
 from nav_msgs.msg import Odometry
-from bluerov_interfaces.msg import ActuatorInput
+from geometry_msgs.msg import Wrench
 from sensor_msgs.msg import Joy
 
 from pymavlink import mavutil
@@ -16,7 +16,7 @@ class BlueROV2CommNode(Node):
         super().__init__('bluerov2_comm_node')
         self.odomPub_ = self.create_publisher(Odometry, 'CSEI/observer/odom', 10)
         self.joySub_ = self.create_subscription(Joy, 'joy', self.joystick_callback, 10)
-        self.actuatorSub_ = self.create_subscription(ActuatorInput, 'actuation/bluerov2_standard', self.actuation_callback, 10)
+        self.actuatorSub_ = self.create_subscription(Wrench, 'controller/output/desired_forces', self.actuation_callback, 10)
         self.actuatorSub_  # prevent unused variable warning
         timer_period = 0.001  # seconds
         self.state_update_timer = self.create_timer(timer_period, self.update_state)
@@ -51,7 +51,7 @@ class BlueROV2CommNode(Node):
         self.odomPub_.publish(odom_msg)
     
     def actuation_callback(self, msg):
-        pwm_signals = [msg.thrust5, msg.thrust4, msg.thrust3, msg.thrust6, msg.thrust1, msg.thrust2]
+        pwm_signals = [msg.torque.y, msg.torque.x, msg.force.z, msg.torque.z, msg.force.x, msg.force.y]
         result = []
         # Loop through and cap pwm signals at 1700/1300 (40 * 5 = 200. 1500 +- 200 = 1700 / 1300)
         for signal in pwm_signals:
