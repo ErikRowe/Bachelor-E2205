@@ -61,14 +61,14 @@ If cloning to another folder, remember to change the commands to match the corre
 Clone repository:
 ```
 cd ~
-mkdir bs_ws/src && cd bs_ws/src
+mkdir -p bs_ws/src && cd bs_ws/src
 git clone https://github.com/ErikRowe/Bachelor-E2205
 ```
 
 Build and source in terminal.
 ```
 cd ~/bs_ws
-colcon build && source install/setup.bash
+colcon build --packages-select controller_package && source install/setup.bash
 ```
 To start the controller node use:
 ```
@@ -84,9 +84,6 @@ Use params.yaml to change node parameters during runtime. Upload changes using:
 ```
 ros2 param load /Control_Node ~/bs_ws/src/Bachelor-E2205/controller_package/params/params.yaml
 ```
-
-```
-
 
 ## Connect with drone
 # Drone side
