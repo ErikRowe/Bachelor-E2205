@@ -15,12 +15,11 @@ Tested on Ubuntu Focal Fossa (20.04) using ROS2 Galactic.
 
 ## Subscribes to
 * sensor_msgs/msg/Joy Joy (Required for joystick operation)
-* sensor_msgs/msg/Imu bno055/imu (Alternative to odom for attitude)
 * nav_msgs/msg/Odometry CSEI/observer/odom (Required for state estimation)
+* geometry_msgs/msg/Pose controller/input/setpoint Setpoint sent via ROS2 topic
 
 ## Publishes to
-* bluerov_interfaces/msg/ActuatorInput /actuation (Used by actuator driver)
-* bluerov_interfaces/msgActuatorInput /actuation/bluerov2_standard (Used by bluerov2_communication node, to connect to ardusub)
+* geometry_msgs/msg/Wrench controller/output/desired_forces Force output from controller
 
 ## ROS2 Parameters
 
@@ -37,39 +36,38 @@ Tested on Ubuntu Focal Fossa (20.04) using ROS2 Galactic.
 | --- | ----------- |
 | Proportional_gain_angular | PD Controllers proportional gain which affects rotational control |
 | Proportional_gain_linear | PD Controllers proportional gain which affects linear control |
+| Integral_gain_angular | PID Controllers integral gain which affects rotational control |
+| Integral_gain_linear | PID Controllers integral gain which affects linear control |
+| Integral_windup_angular | Maximum windup for angular control |
+| Integral_windup_linear | Maximum winduo for linear control |
 | Derivative_gain | Derivative gain for the PD controller |
-| Control_mode | How the control system should behave |
-| Control_mode = 0 | Manual control. Joystick input is directly converted to thrust. Requires joystick |
-| Control_mode = 1 | PD Control. Joystick input is converted to a setpoint change OR setpoint is provided by ROS2 parameters |
 
 ### Operator parameters
 | Parameter | Description |
 | --- | ----------- |
-| Use_param_file_setpoint | If true, use sthe setpoint uploaded by the parameter files |
-| World_frame_type | How the ROV is represented in the world frame. Affects setpoint changes when operating with joystick |
-| World_frame_type = 0 | Expects attitude to have a normal representation (right hand rule) |
-| World_frame_type = 1 | Expects attitude to be represented in NED and compensates joystick input to be more intuitive for the operator |
-| Use_imu_directly | Use data from IMU directly instead of state estimate |
-
-### Setpoints
-If Use_param_file_setpoint is true, these values will be used for the PD controller. Remember to upload updated values to the ROS2 node parameters. 
-| Parameter | Description |
-| --- | ----------- |
-| Attitude_setpoint | Attitude setpoint represented in quaternion representation in the order [w, x, y, z] |
-| Position_setpoint | Positional setpoint represented in [x, y, z] |
+| Load_setpoint_from_topic | If true, use the setpoint from ROS2 topic |
+| Compensate_NED | Compensate joystick input when body frame is in NED |
+| Linear_control_xy | Enable/disable control in the xy-plane |
+| Linear_control_z | Enable/disable control along the z-axis |
+| Enable_controller | Enable/disable controller output values |
+| Enable_integrator | Enable/disable integrator in the controller |
 
 
 
 # How to use:
 
+If cloning to another folder, remember to change the commands to match the correct folder.
 
-Clone repository to desired folder:
+Clone repository:
 ```
+cd ~
+mkdir bs_ws/src && cd bs_ws/src
 git clone https://github.com/ErikRowe/Bachelor-E2205
 ```
 
 Build and source in terminal.
 ```
+cd ~/bs_ws
 colcon build && source install/setup.bash
 ```
 To start the controller node use:
@@ -82,15 +80,11 @@ If using a joystick, start joy in a new terminal window:
 ros2 run joy joy_node
 ```
 
-Use /your_folder/controller_package/params/ to change node parameters during runtime. Upload changes using:
+Use params.yaml to change node parameters during runtime. Upload changes using:
 ```
-ros2 param load /Control_Node /your_folder/controller_package/params/params.yaml
+ros2 param load /Control_Node ~/bs_ws/src/Bachelor-E2205/controller_package/params/params.yaml
 ```
-```
-ros2 param load /Control_Node /your_folder/controller_package/params/attitude_setpoint.yaml
-```
-```
-ros2 param load /Control_Node /your_folder/controller_package/params/positon_setpoint.yaml
+
 ```
 
 
