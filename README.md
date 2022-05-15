@@ -133,8 +133,8 @@ Koble til dronen:
 * pass: spør erik
 
 Start ros master på dronen:
-* export ROS_IP=129.241.141.129
-* export ROS_HOSTNAME=129.241.141.129
+* export ROS_IP=129.241.141.142
+* export ROS_HOSTNAME=129.241.141.142
 * roslaunch auv_setup beluga_launch (elns)
 
 
@@ -144,5 +144,5 @@ Start ros1 bridge på pc:
 * source ~/ROS/Bridge/install/setup.bash
 * export ROS_IP=129.241.187.103
 * export ROS_HOSTNAME=129.241.187.103
-* export ROS_MASTER_URI=http://129.241.141.129:11311
+* export ROS_MASTER_URI=http://129.241.141.142:11311
 * ros2 run ros1_bridge dynamic_bridge --bridge-all-topics
