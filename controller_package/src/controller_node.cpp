@@ -2,7 +2,7 @@
 
 ControlNode::ControlNode(const rclcpp::NodeOptions &options)
     : Node("Control_Node", options),
-      use_param_file_setpoint(declare_parameter<bool>("Use_param_file_setpoint", false)),
+      use_ROS2_topic_as_setpoint(declare_parameter<bool>("Use_ROS2_topic_as_setpoint", false)),
       use_imu_directly(declare_parameter<bool>("Use_imu_directly", false)),
       control_mode(declare_parameter<int>("Control_mode", 0)),
       world_frame_type(declare_parameter<int>("World_frame_type", 0)),
@@ -19,23 +19,26 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
       scaling_derivative_gain(declare_parameter<double>("Derivative_gain", 0.0)),
       max_windup_linear(declare_parameter<double>("Integral_windup_linear", 0.0)),
       max_windup_angular(declare_parameter<double>("Integral_windup_angular", 0.0)),
-      use_integrator(declare_parameter<bool>("Use_integrator", false))
+      use_integrator(declare_parameter<bool>("Use_integrator", false)),
+      use_linear_control_xy(declare_parameter<bool>("Use_linear_control_xy", false)),
+      use_linear_control_z(declare_parameter<bool>("Use_linear_control_z", false)),
+      m_scale(declare_parameter<double>("Manual_control_scaling", 40.0))
 {
     //Activate subscriptions
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
-      "joy", 10, std::bind(&ControlNode::joystick_callback, this, _1));
+        "joy", 10, std::bind(&ControlNode::joystick_callback, this, _1));
     //Vortex:
-    // state_estim_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-    //   "odometry/filtered", 10, std::bind(&ControlNode::estimate_callback, this, _1));
     state_estim_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-      "CSEI/observer/odom", 10, std::bind(&ControlNode::estimate_callback, this, _1));
+        "odometry/filtered", 10, std::bind(&ControlNode::estimate_callback, this, _1));
+    // state_estim_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+    //   "CSEI/observer/odom", 10, std::bind(&ControlNode::estimate_callback, this, _1));
     imu_estim_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
-      "bno055/imu", 10, std::bind(&ControlNode::imu_callback, this, _1));
+        "bno055/imu", 10, std::bind(&ControlNode::imu_callback, this, _1));
+    setpoint_subscriber_ = this->create_subscription<geometry_msgs::msg::Pose>(
+        "controller/setpoint", 10, std::bind(&ControlNode::setpoint_callback, this, _1));
 
     //Activate publishers
-    act_pub_ = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/bluerov/u", 10);
-    act_pub_br2 = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/actuation/bluerov2_standard", 10);
-    vortex_pub = this->create_publisher<geometry_msgs::msg::Wrench>("/thrust/desired_forces", 10);
+    forces_pub_ = this->create_publisher<geometry_msgs::msg::Wrench>("/thrust/desired_forces", 10);
 
     //Activate timers
     SampleTimer_ = this->create_wall_timer(25ms, std::bind(&ControlNode::controller_node_main, this));
@@ -50,10 +53,11 @@ void ControlNode::joystick_callback(const sensor_msgs::msg::Joy msg)
         // joystick_handler_.movement[0] = - joystick_handler_.movement[0];
         joystick_handler_.movement[1] = - joystick_handler_.movement[1];
         joystick_handler_.movement[2] = - joystick_handler_.movement[2];
-        joystick_handler_.movement[3] = - joystick_handler_.movement[3];
+        // joystick_handler_.movement[3] = - joystick_handler_.movement[3];
         joystick_handler_.movement[4] = - joystick_handler_.movement[4];
         joystick_handler_.movement[5] = - joystick_handler_.movement[5];
     }
+
     joy_axes_logging = msg.axes;
 }
 
@@ -63,13 +67,14 @@ void ControlNode::estimate_callback(const nav_msgs::msg::Odometry msg){
     auto lin = msg.twist.twist.linear;
     auto ang = msg.twist.twist.angular;
     if (!use_imu_directly){
-        // x = Eigen::Vector3d(pos.x, pos.y, pos.z);
-        x = Eigen::Vector3d::Zero();
+        x = Eigen::Vector3d(pos.x, pos.y, pos.z);
+        v << lin.x, lin.y, lin.z, ang.x, ang.y, ang.z;
         q = Eigen::Quaterniond(att.w, att.x, att.y, att.z);
         q.normalize();
-        // v << lin.x, lin.y, lin.z, ang.x, ang.y, ang.z;
-        v << 0, 0, 0, ang.x, ang.y, ang.z;
     }
+    v[0] = 0;
+    v[1] = 0;
+    v[2] = 0;
 }
 
 void ControlNode::imu_callback(const sensor_msgs::msg::Imu msg){
@@ -83,15 +88,24 @@ void ControlNode::imu_callback(const sensor_msgs::msg::Imu msg){
     }
 }
 
+void ControlNode::setpoint_callback(const geometry_msgs::msg::Pose msg){
+    // ros2_param_attitude_setpoint[0] = msg.orientation.w;
+    // ros2_param_attitude_setpoint[1] = msg.orientation.x;
+    // ros2_param_attitude_setpoint[2] = msg.orientation.y;
+    // ros2_param_attitude_setpoint[3] = msg.orientation.z;
+    // ros2_param_position_setpoint[0] = msg.position.x;
+    // ros2_param_position_setpoint[1] = msg.position.y;
+    // ros2_param_position_setpoint[2] = msg.position.z;   
+}
+
 void ControlNode::controller_node_main()
 {
-    double m_scale = 40.0; //Manual control scaling factor
     //Logic to allow setpoint changes when releasing joystick
     setpoint_changes = Eigen::Vector6d::Zero();
     Eigen::Matrix3d R = q.toRotationMatrix();
-    Eigen::Vector3d I_frame_lin = R * Eigen::Vector3d(joystick_handler_.movement[0] * m_scale, joystick_handler_.movement[1] * m_scale, joystick_handler_.movement[2] * m_scale);
+    Eigen::Vector3d I_frame_lin = R * Eigen::Vector3d(joystick_handler_.movement[0], joystick_handler_.movement[1], joystick_handler_.movement[2]);
     for (int i = 0; i < 3; i++){
-        active_actions[i] = (bool)I_frame_lin [i];
+        active_actions[i] = (bool)I_frame_lin[i];
         active_actions[i + 3] = (bool)joystick_handler_.movement[i + 3];
         if (!active_actions[i] && last_tick_active_actions[i]){
             setpoint_changes[i] = true;
@@ -99,10 +113,6 @@ void ControlNode::controller_node_main()
         if (!active_actions[i + 3] && last_tick_active_actions[i + 3]){
             setpoint_changes[i + 3] = true;
         }
-    }
-    //If depth hold, only allow heave movement to change heave setpoint
-    if (control_mode == 2){
-        setpoint_changes[2] = (bool)joystick_handler_.movement[2];
     }
 
     //Check and perform setpoint changes from joystick release
@@ -119,7 +129,7 @@ void ControlNode::controller_node_main()
         last_tick_is_controller_active = false;
     }
 
-    if (use_param_file_setpoint){ //If using ROS2 parameter setpoint, override joystick setpoint
+    if (use_ROS2_topic_as_setpoint){ //If using ROS2 parameter setpoint, override joystick setpoint
         reference_handler_.q_d.w() = ros2_param_attitude_setpoint[0];
         reference_handler_.q_d.x() = ros2_param_attitude_setpoint[1];
         reference_handler_.q_d.y() = ros2_param_attitude_setpoint[2];
@@ -128,50 +138,34 @@ void ControlNode::controller_node_main()
         reference_handler_.x_d[1] = ros2_param_position_setpoint[1];
         reference_handler_.x_d[2] = ros2_param_position_setpoint[2];
     }
-
-
+    if (!use_linear_control_xy){
+        reference_handler_.x_d[0] = x[0];
+        reference_handler_.x_d[1] = x[1];
+    }
+    if (!use_linear_control_z){
+        reference_handler_.x_d[2] = x[2];
+    }
 
     reference_handler_.q_d.normalize(); //Make sure the quaternion setpoint is normalized
 
-    // Sample controller
-    Eigen::Vector6d tau_controller = Controller_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
-    Eigen::Vector6d tau_final; //Variable to be sent for actuation
-    for (int i = 0; i < 3; i++){ //Manual input, may be overridden depending on control mode
+    Eigen::Vector6d tau_final; //Variable to be published
+
+    for (int i = 0; i < 3; i++){
         tau_final[i] = joystick_handler_.movement[i] * m_scale;
         tau_final[i + 3] = joystick_handler_.movement[i + 3] * m_scale / 2;
     }
 
-    switch (control_mode){
-        case 0: // Manual control
-            break;
-        case 1: // PD Control
-            for (int i = 0; i < 6; i++){
-                if (!(bool)joystick_handler_.movement[i]){ // If joystick is active, use manual input, else use controller
-                    tau_final[i] = tau_controller[i];
-                }
+    if (control_mode == 1){
+        //Sample controller
+        Eigen::Vector6d tau_controller = Controller_.main(q, reference_handler_.q_d, x, reference_handler_.x_d, v);
+        for (int i = 0; i < 6; i++){
+            if (!(bool) joystick_handler_.movement[i]){
+                tau_final[i] = tau_controller[i];
             }
-            break;
-        case 2: //PD Control Depth Hold
-            if (!setpoint_changes[2]){
-                I_frame_lin[2] = 0;
-            }
-            else if ((bool)joystick_handler_.movement[2]){
-                Eigen::Vector3d I_frame_heave = R * Eigen::Vector3d(0, 0, joystick_handler_.movement[2] * m_scale);
-                I_frame_lin[0] -= I_frame_heave[0];
-                I_frame_lin[1] -= I_frame_heave[1];
-            }
-            tau_final << R.transpose() * I_frame_lin, tau_final[3], tau_final[4], tau_final[5];
-            for (int i = 0; i < 6; i++){
-                if (!(bool)joystick_handler_.movement[i]){ // If joystick is active, use manual input, else use controller
-                    tau_final[i] = tau_controller[i];
-                }
-            }
-            break;
+        }
     }
 
-    bluerov2_standard_actuation(tau_final); //Send actuation to topic accessed by bluerov2_communication node
-    send_actuation(tau_final); //Send actuation to topic accessed by Bassos actuator driver
-    send_vortex(tau_final);
+    publish_forces(tau_final); // Sends tau to a function that publishes to ROS
     z_logging = Controller_.getErrorVector(q, reference_handler_.q_d, x, reference_handler_.x_d); //Store z for logging
     tau_logging = tau_final; //Store tau for logging
 
@@ -182,23 +176,8 @@ void ControlNode::controller_node_main()
     }
 }
 
-void ControlNode::send_actuation(Eigen::Vector6d tau)
-{
-  bluerov_interfaces::msg::ActuatorInput actuation_message_ = bluerov_interfaces::msg::ActuatorInput();
-  Eigen::Vector8d thrusters_ = actuator_builder_.build_actuation(tau);
-  actuation_message_.header.stamp = clock_.now();
-  actuation_message_.thrust1 = thrusters_(0);
-  actuation_message_.thrust2 = thrusters_(1);
-  actuation_message_.thrust3 = thrusters_(2);
-  actuation_message_.thrust4 = thrusters_(3);
-  actuation_message_.thrust5 = thrusters_(4);
-  actuation_message_.thrust6 = thrusters_(5);
-  actuation_message_.thrust7 = thrusters_(6);
-  actuation_message_.thrust8 = thrusters_(7);
-  act_pub_->publish(actuation_message_);
-}
 
-void ControlNode::send_vortex(Eigen::Vector6d tau)
+void ControlNode::publish_forces(Eigen::Vector6d tau)
 {
   geometry_msgs::msg::Wrench forces = geometry_msgs::msg::Wrench();
   forces.force.x = tau[0];
@@ -207,21 +186,7 @@ void ControlNode::send_vortex(Eigen::Vector6d tau)
   forces.torque.x = tau[3];
   forces.torque.y = tau[4];
   forces.torque.z = tau[5];
-  vortex_pub->publish(forces);
-}
-
-void ControlNode::bluerov2_standard_actuation(Eigen::Vector6d tau){
-    bluerov_interfaces::msg::ActuatorInput actuation_message_ = bluerov_interfaces::msg::ActuatorInput();
-    actuation_message_.header.stamp = clock_.now();
-    actuation_message_.thrust1 = tau(0);
-    actuation_message_.thrust2 = tau(1);
-    actuation_message_.thrust3 = tau(2);
-    actuation_message_.thrust4 = tau(3);
-    actuation_message_.thrust5 = tau(4);
-    actuation_message_.thrust6 = tau(5);
-    actuation_message_.thrust7 = 0;
-    actuation_message_.thrust8 = 0;
-    act_pub_br2->publish(actuation_message_);
+  forces_pub_->publish(forces);
 }
 
 
@@ -255,12 +220,15 @@ void ControlNode::logging()
 void ControlNode::get_ros2_params(){
 
     //Logic parameters
-    this->get_parameter("Use_param_file_setpoint", use_param_file_setpoint);
+    this->get_parameter("Use_ROS2_topic_as_setpoint", use_ROS2_topic_as_setpoint);
     this->get_parameter("Use_imu_directly", use_imu_directly);
     this->get_parameter("Control_mode", control_mode);
     this->get_parameter("World_frame_type", world_frame_type);
     this->get_parameter("Attitude_setpoint", ros2_param_attitude_setpoint);
     this->get_parameter("Position_setpoint", ros2_param_position_setpoint);
+    this->get_parameter("Use_linear_control_xy", use_linear_control_xy);
+    this->get_parameter("Use_linear_control_z", use_linear_control_z);
+    this->get_parameter("Manual_control_scaling", m_scale);
 
     //Controller parameters
     this->get_parameter("Weight", weight);

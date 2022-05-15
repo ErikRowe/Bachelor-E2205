@@ -7,21 +7,15 @@
 
 // Ros includes, these need to be included in dependencies
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/string.hpp>
-#include <std_msgs/msg/float32_multi_array.hpp>
-#include <std_msgs/msg/float32.hpp>
 #include <sensor_msgs/msg/joy.hpp>
 #include <sensor_msgs/msg/imu.hpp>
-#include <geometry_msgs/msg/point.hpp>
-#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/wrench.hpp>
+#include <geometry_msgs/msg/pose.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 
 // Control group includes
 #include "controller_package/common.hpp"
-#include "bluerov_interfaces/msg/actuator_input.hpp"
 #include "controller_package/joy_to_action.hpp"
-#include "controller_package/controller_actuation_builder.hpp"
 #include "controller_package/controller.hpp"
 #include "controller_package/controller_reference.hpp"
 #include "controller_package/logging.hpp"
@@ -39,11 +33,10 @@ class ControlNode : public rclcpp::Node
     private:
         // ROS2 Declarations
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;          // Subscribes to state estimation
-        rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_estim_sub_;              //Temp shit probably
+        rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_estim_sub_;              // Temp shit probably
         rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;                    // Subscribes to joy input
-        rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_;     // Publishes actuation message
-        rclcpp::Publisher<bluerov_interfaces::msg::ActuatorInput >::SharedPtr act_pub_br2;  // Publishes actuation message to standard bluerov2
-        rclcpp::Publisher<geometry_msgs::msg::Wrench >::SharedPtr vortex_pub;
+        rclcpp::Subscription<geometry_msgs::msg::Pose >::SharedPtr setpoint_subscriber_;    // Subscribes to setpoint sent in ROS2
+        rclcpp::Publisher<geometry_msgs::msg::Wrench >::SharedPtr forces_pub_;              // Publishes desired forces and torque
         rclcpp::TimerBase::SharedPtr SampleTimer_;                                          // Timer to sample node main function
         rclcpp::TimerBase::SharedPtr ROS2ParamTimer_;                                       // Timer to update from ROS2 params
         rclcpp::Clock clock_;                                                               // Makes a clock for ros2
@@ -52,7 +45,6 @@ class ControlNode : public rclcpp::Node
         UserJoystickInput joystick_handler_;                                                // Instance of joystick input handler
         ControllerClass Controller_;                                                        // Instance of PD logic handler
         LoggingClass Logg_;                                                                 // Instance of logging to file handler
-        ActuationBuilderClass actuator_builder_;                                            // Instance of actuation message handler
         ReferenceClass reference_handler_;                                                  // Instance of reference logic handler
 
         //Logging variable decleration
@@ -64,7 +56,7 @@ class ControlNode : public rclcpp::Node
         bool enable = true;
 
         // ROS2 Parameters
-        bool use_param_file_setpoint;
+        bool use_ROS2_topic_as_setpoint;
         bool use_imu_directly;
         int control_mode;
         int world_frame_type;
@@ -82,6 +74,9 @@ class ControlNode : public rclcpp::Node
         double max_windup_linear;
         double max_windup_angular;
         bool use_integrator;
+        bool use_linear_control_xy;
+        bool use_linear_control_z;
+        double m_scale;
 
 
         //Initialization of local variables
@@ -109,6 +104,13 @@ class ControlNode : public rclcpp::Node
         void estimate_callback(const nav_msgs::msg::Odometry msg);
 
         /**
+         * @brief Callback message to read setpoint from ROS2 topic
+         * 
+         * @param msg Point message with information of position and attitude setpoint
+         */
+        void setpoint_callback(const geometry_msgs::msg::Pose msg);
+
+        /**
          * @brief Callback msg to read global attitude estimation
          * 
          * @param msg Contains information regarding velocities and attitude
@@ -126,8 +128,7 @@ class ControlNode : public rclcpp::Node
          * 
          * @param tau sixD vector containing angular[3] and linear[3] movement (forces)
          */
-        void send_actuation(Eigen::Vector6d tau);
-        void send_vortex(Eigen::Vector6d tau);
+        void publish_forces(Eigen::Vector6d tau);
 
         
         /**
@@ -135,14 +136,6 @@ class ControlNode : public rclcpp::Node
          * 
          */
         void logging();
-
-
-        /**
-         * @brief Sends output in the form of surge, sway, heave, roll, pitch, yaw. Used by bluerov2 Mavlink messages
-         * 
-         * @param tau sixD vector containing angular[3] and linear[3] movement
-         */
-        void bluerov2_standard_actuation(Eigen::Vector6d tau);
 
         /**
          * @brief Reads ROS2 parameter changes and updates locally

@@ -11,14 +11,29 @@
     - 0.0 # y
     - 0.0 # z
     Proportional_gain_angular: 20.0       # Proportional gain used in angular control
-    Proportional_gain_linear: 0.0         # Proportional gain used in linear control
+    Proportional_gain_linear: 60.0        # Proportional gain used in linear control
     Integral_gain_angular: 2.0            # Integral gain used in angular control
     Integral_gain_linear: 0.0             # Integral gain used in linear control
     Derivative_gain: 5.0                  # Derivative gain used in angular and linear control
     Integral_windup_linear: 4.0           # Maximum integral windup linear
     Integral_windup_angular: 4.0          # Maximum integral windup angular
-    Control_mode: 1                       # Type of control mode. 0 = manual, 1 = controller, 2 = depth hold
+    Control_mode: 0                       # Type of control mode. 0 = manual, 1 = controller, 2 = depth hold
     Use_integrator: false                 # Boolean to decide if integrator should be connected (WARNING: STABILITY NOT GUARANTEED. USE AT OWN RISK)
-    Use_param_file_setpoint: true        # Use parameter file setpoints
+    Use_ROS2_topic_as_setpoint: true     # Use parameter file setpoints
     World_frame_type: 0                   # Compensate joystick input for different body frames
     Use_imu_directly: false               # Use data from IMU directly instead of state estimate
+    Use_linear_control_xy: false          # Enable/Disable positional control in the xy-plane
+    Use_linear_control_z: false           # Enable/Disable positional control on the z - axis
+    Position_setpoint:
+    - 0.0 # x
+    - 0.0 # y
+    - 0.0 # z
+    Attitude_setpoint:
+    - 0.1 # w
+    - 0.0 # x
+    - 0.0 # y
+    - 0.0 # z
+    # - 0.924 # w
+    # - 0.0 # x
+    # - 0.383 # y
+    # - 0.0 # z
