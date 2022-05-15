@@ -10,11 +10,11 @@ Bluerov2_interface_node::Bluerov2_interface_node(const rclcpp::NodeOptions &opti
 
     //Subscribe to controller output and convert to bluerov2 interface message
     controller_subscriber = this->create_subscription<geometry_msgs::msg::Wrench>(
-      "thrust/desired_forces", 10, std::bind(&Bluerov2_interface_node::controller_callback, this, _1));
+      "controller/output/desired_forces", 10, std::bind(&Bluerov2_interface_node::controller_callback, this, _1));
 
     //Activate publishers
     bluerov2_thruster_publisher = this->create_publisher<bluerov_interfaces::msg::ActuatorInput>("/bluerov/u", 10);
-    setpoint_publisher = this->create_publisher<geometry_msgs::msg::Pose>("/controller/setpoint", 10);
+    setpoint_publisher = this->create_publisher<geometry_msgs::msg::Pose>("/controller/input/setpoint", 10);
 
 
     //Initiate thruster message builder
@@ -57,8 +57,8 @@ void Bluerov2_interface_node::setpoint_callback(const bluerov_interfaces::msg::R
 void Bluerov2_interface_node::controller_callback(const geometry_msgs::msg::Wrench msg)
 {
   bluerov_interfaces::msg::ActuatorInput thruster_message = bluerov_interfaces::msg::ActuatorInput();
-  Eigen::Vector6d tau = Eigen::Vector6d(msg.force.x, msg.force.y, msg.force.z,
-                                        msg.torque.x, msg.torque.y, msg.torque.z);
+  Eigen::Vector6d tau;
+  tau << msg.force.x, msg.force.y, msg.force.z, msg.torque.x, msg.torque.y, msg.torque.z;
                                         
   Eigen::Vector8d thrusters_ = B_pinv_ * tau;
   thruster_message.header.stamp = clock_.now();

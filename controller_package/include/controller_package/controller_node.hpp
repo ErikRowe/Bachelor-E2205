@@ -1,14 +1,7 @@
-#include <chrono>
-#include <functional>
-#include <memory>
-#include <string>
-#include <cstdio>
-
 
 // Ros includes, these need to be included in dependencies
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joy.hpp>
-#include <sensor_msgs/msg/imu.hpp>
 #include <geometry_msgs/msg/wrench.hpp>
 #include <geometry_msgs/msg/pose.hpp>
 #include <nav_msgs/msg/odometry.hpp>
@@ -17,7 +10,7 @@
 #include "controller_package/common.hpp"
 #include "controller_package/joy_to_action.hpp"
 #include "controller_package/controller.hpp"
-#include "controller_package/controller_reference.hpp"
+#include "controller_package/setpoint_holder.hpp"
 #include "controller_package/logging.hpp"
 
 
@@ -32,20 +25,19 @@ class ControlNode : public rclcpp::Node
 
     private:
         // ROS2 Declarations
-        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;          // Subscribes to state estimation
-        rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_estim_sub_;              // Temp shit probably
-        rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;                    // Subscribes to joy input
         rclcpp::Subscription<geometry_msgs::msg::Pose >::SharedPtr setpoint_subscriber_;    // Subscribes to setpoint sent in ROS2
+        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr state_estim_sub_;          // Subscribes to state estimation
+        rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;                    // Subscribes to joy input
         rclcpp::Publisher<geometry_msgs::msg::Wrench >::SharedPtr forces_pub_;              // Publishes desired forces and torque
-        rclcpp::TimerBase::SharedPtr SampleTimer_;                                          // Timer to sample node main function
         rclcpp::TimerBase::SharedPtr ROS2ParamTimer_;                                       // Timer to update from ROS2 params
+        rclcpp::TimerBase::SharedPtr SampleTimer_;                                          // Timer to sample node main function
         rclcpp::Clock clock_;                                                               // Makes a clock for ros2
 
         // Class declarations
+        SetpointHolderClass setpoint_holder_;                                               // Instance of class to hold setpoint and some logic
         UserJoystickInput joystick_handler_;                                                // Instance of joystick input handler
         ControllerClass Controller_;                                                        // Instance of PD logic handler
         LoggingClass Logg_;                                                                 // Instance of logging to file handler
-        ReferenceClass reference_handler_;                                                  // Instance of reference logic handler
 
         //Logging variable decleration
         Eigen::Vector6d tau_logging = Eigen::Vector6d::Zero();                              // Save tau as a class variable to be used for logging
@@ -57,11 +49,8 @@ class ControlNode : public rclcpp::Node
 
         // ROS2 Parameters
         bool use_ROS2_topic_as_setpoint;
-        bool use_imu_directly;
-        int control_mode;
-        int world_frame_type;
-        std::vector<double> ros2_param_attitude_setpoint;
-        std::vector<double> ros2_param_position_setpoint;
+        bool enable_controller;
+        bool compensate_NED;
         double weight;
         double buoyancy;
         std::vector<double> centre_of_gravity;
@@ -86,7 +75,9 @@ class ControlNode : public rclcpp::Node
         bool last_tick_is_controller_active = false;                    //Variable to compare controller activity
         std::vector<bool> last_tick_active_actions = {false, false, false, false, false, false};          //Tracker if last tick had action input
         std::vector<bool> active_actions = {false, false, false, false, false, false};                    //Tracker if current tick has action input
-        Eigen::Vector6d setpoint_changes;                                                               //Tracker for which actions are eligible for setpoint change
+        Eigen::Vector6d setpoint_changes;                                                                 //Tracker for which actions are eligible for setpoint change
+        Eigen::Vector3d topic_position_setpoint = Eigen::Vector3d::Zero();                                //Setpoint recieved from ROS2 topic
+        Eigen::Quaterniond topic_attitude_setpoint = Eigen::Quaterniond(1, 0, 0, 0);                      //Setpoint recieved from ROS2 topic
 
 
         /**
@@ -109,13 +100,6 @@ class ControlNode : public rclcpp::Node
          * @param msg Point message with information of position and attitude setpoint
          */
         void setpoint_callback(const geometry_msgs::msg::Pose msg);
-
-        /**
-         * @brief Callback msg to read global attitude estimation
-         * 
-         * @param msg Contains information regarding velocities and attitude
-         */
-        void imu_callback(const sensor_msgs::msg::Imu msg);
 
         /**
          * @brief Function to sample controller and handle general logic

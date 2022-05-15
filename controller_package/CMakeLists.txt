@@ -12,13 +12,13 @@ find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
-find_package(Eigen3)
+find_package(Eigen3 REQUIRED)
 
 add_executable(controller_node
   src/controller_node.cpp
   src/joy_to_action.cpp
   src/controller.cpp
-  src/controller_reference.cpp
+  src/setpoint_holder.cpp
   src/logging.cpp
 )
 

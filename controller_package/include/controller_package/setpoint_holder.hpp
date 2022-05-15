@@ -1,6 +1,6 @@
 #include "controller_package/common.hpp"
 
-class ReferenceClass{
+class SetpointHolderClass{
     public:
 
         /**

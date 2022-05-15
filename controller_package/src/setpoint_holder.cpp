@@ -1,6 +1,6 @@
-#include "controller_package/controller_reference.hpp"
+#include "controller_package/setpoint_holder.hpp"
 
-void ReferenceClass::update_setpoint(Eigen::Vector6d &setpoint_changes, std::vector<bool> buttons,
+void SetpointHolderClass::update_setpoint(Eigen::Vector6d &setpoint_changes, std::vector<bool> buttons,
                                      const Eigen::Quaterniond &q, const Eigen::Vector3d &x){
     
     Eigen::Vector3d setpoint_change_lin = x; //Copy current postion
@@ -24,7 +24,7 @@ void ReferenceClass::update_setpoint(Eigen::Vector6d &setpoint_changes, std::vec
 }
 
 
-void ReferenceClass::handle_button_input(Eigen::Vector3d &setpoint_change_lin, Eigen::Quaterniond &setpoint_change_att,
+void SetpointHolderClass::handle_button_input(Eigen::Vector3d &setpoint_change_lin, Eigen::Quaterniond &setpoint_change_att,
                                          std::vector<bool> buttons, Eigen::Vector6d  &setpoint_changes){
     
     auto reset_attitude = [&](){

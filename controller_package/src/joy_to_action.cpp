@@ -21,6 +21,6 @@ void UserJoystickInput::joystickToActions(const std::vector<float> axes_input, c
     movement = {surge, sway, heave, roll, pitch, yaw};
 
     bool reset_attitude     = buttons.find("A")->second;
-    bool start_logging      = buttons.find("B")->second;
-    active_buttons = {reset_attitude, start_logging};
+    bool toggle_logging      = buttons.find("B")->second;
+    active_buttons = {reset_attitude, toggle_logging};
 }
