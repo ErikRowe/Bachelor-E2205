@@ -41,7 +41,7 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
 void ControlNode::joystick_callback(const sensor_msgs::msg::Joy msg)
 {
     joystick_handler_.joystickToActions(msg.axes, msg.buttons);
-    if (compensate_NED){
+    if (compensate_NED){ //Compensate joystick input such that NED control is more intuitive
         // joystick_handler_.movement[0] = - joystick_handler_.movement[0];
         joystick_handler_.movement[1] = - joystick_handler_.movement[1];
         joystick_handler_.movement[2] = - joystick_handler_.movement[2];
@@ -49,7 +49,7 @@ void ControlNode::joystick_callback(const sensor_msgs::msg::Joy msg)
         joystick_handler_.movement[4] = - joystick_handler_.movement[4];
         joystick_handler_.movement[5] = - joystick_handler_.movement[5];
     }
-
+    //Save axes information for data logging purposes
     joy_axes_logging = msg.axes;
 }
 
@@ -79,14 +79,16 @@ void ControlNode::controller_node_main()
     //Logic to allow setpoint changes when releasing joystick
     setpoint_changes = Eigen::Vector6d::Zero();
     Eigen::Matrix3d R = q.toRotationMatrix();
+    //Convert surge, sway and heave to world frame and check if any actions provide changes for x, y, z in the world frame
+    //I so, allow the setpoint to be changed when releasing the joystick
     Eigen::Vector3d I_frame_lin = R * Eigen::Vector3d(joystick_handler_.movement[0], joystick_handler_.movement[1], joystick_handler_.movement[2]);
     for (int i = 0; i < 3; i++){
         active_actions[i] = (bool)I_frame_lin[i];
         active_actions[i + 3] = (bool)joystick_handler_.movement[i + 3];
-        if (!active_actions[i] && last_tick_active_actions[i]){
+        if (!active_actions[i] && last_tick_active_actions[i]){ // If (releasing joystick) allow setpoint change (position)
             setpoint_changes[i] = true;
         }
-        if (!active_actions[i + 3] && last_tick_active_actions[i + 3]){
+        if (!active_actions[i + 3] && last_tick_active_actions[i + 3]){ // If (releasing joystick) allow setpoint change (orientation)
             setpoint_changes[i + 3] = true;
         }
     }
@@ -105,17 +107,17 @@ void ControlNode::controller_node_main()
         last_tick_is_controller_active = false;
     }
 
-    if (use_ROS2_topic_as_setpoint){ //If using ROS2 parameter setpoint, override joystick setpoint
+    if (use_ROS2_topic_as_setpoint){ //If using ROS2 parameter setpoint, override setpoint
         setpoint_holder_.q_d = topic_attitude_setpoint;
         setpoint_holder_.x_d = topic_position_setpoint;
     }
-    if (!use_linear_control_xy){
+    if (!use_linear_control_xy){ // If not using linear control in the xy plane, set the error and velocity to be zero
         setpoint_holder_.x_d[0] = x[0];
         setpoint_holder_.x_d[1] = x[1];
         v[0] = 0;
         v[1] = 0;
     }
-    if (!use_linear_control_z){
+    if (!use_linear_control_z){ // If not using linear control along the z axis, set the error and velocity to be zero
         setpoint_holder_.x_d[2] = x[2];
         v[2] = 0;
     }
@@ -124,7 +126,7 @@ void ControlNode::controller_node_main()
 
     Eigen::Vector6d tau_final; //Variable to be published
 
-    for (int i = 0; i < 3; i++){
+    for (int i = 0; i < 3; i++){ // Map joystick input to the published variable. May be overridden by controller
         tau_final[i] = joystick_handler_.movement[i] * m_scale;
         tau_final[i + 3] = joystick_handler_.movement[i + 3] * m_scale / 2;
     }
@@ -132,7 +134,7 @@ void ControlNode::controller_node_main()
     if (enable_controller){
         //Sample controller
         Eigen::Vector6d tau_controller = Controller_.main(q, setpoint_holder_.q_d, x, setpoint_holder_.x_d, v);
-        for (int i = 0; i < 6; i++){
+        for (int i = 0; i < 6; i++){ // If joystick is not active in the given direction, use controller value
             if (!(bool) joystick_handler_.movement[i]){
                 tau_final[i] = tau_controller[i];
             }
