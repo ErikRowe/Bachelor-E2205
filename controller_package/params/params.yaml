@@ -30,7 +30,7 @@
     Linear_control_xy: false              # Enable/Disable positional control in the xy-plane
     Linear_control_z: false               # Enable/Disable positional control on the z - axis
     Load_setpoint_from_topic: false       # Use setpoint from ROS2 topic
-    Enable_controller: false              # Enable/disable controller
+    Enable_controller: false              # Enable/disable control system
 
     #Teleoperation settings
     Compensate_NED: true                  # If body frame is in NED, this makes manual control more intuitive
