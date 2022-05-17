@@ -1,8 +1,8 @@
 /Control_Node:
   ros__parameters:
     #Physical properties
-    Buoancy: 10.0                         # Upwards forces from buoancy
-    Weight: 30.0                          # Downwards forces from weight
+    Buoancy: 10.0                         # Upwards forces from buoancy (Positive in NED)
+    Weight: 30.0                          # Downwards forces from weight (Positive in NED)
     Centre_of_buoyancy:                   # Geometrical centre of buoyancy
     - 0.0 # x
     - 0.0 # y
