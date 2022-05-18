@@ -1,8 +1,8 @@
 /Control_Node:
   ros__parameters:
     #Physical properties
-    Buoancy: 10.0                         # Upwards forces from buoancy
-    Weight: 30.0                          # Downwards forces from weight
+    Buoancy: 10.0                         # Upwards forces from buoancy (Positive in NED)
+    Weight: 30.0                          # Downwards forces from weight (Positive in NED)
     Centre_of_buoyancy:                   # Geometrical centre of buoyancy
     - 0.0 # x
     - 0.0 # y
@@ -30,7 +30,7 @@
     Linear_control_xy: false              # Enable/Disable positional control in the xy-plane
     Linear_control_z: false               # Enable/Disable positional control on the z - axis
     Load_setpoint_from_topic: false       # Use setpoint from ROS2 topic
-    Enable_controller: false              # Enable/disable controller
+    Enable_controller: false              # Enable/disable control system
 
     #Teleoperation settings
     Compensate_NED: true                  # If body frame is in NED, this makes manual control more intuitive

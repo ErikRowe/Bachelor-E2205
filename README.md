@@ -80,6 +80,18 @@ If using a joystick, start joy in a new terminal window:
 ros2 run joy joy_node
 ```
 
+If connecting with Basso, bluerov2_interface_bridge and bluerov_interfaces is required:
+```
+cd ~/bs_ws
+colcon build --packages-select bluerov_interfaces && source install/setup.bash
+colcon build --packages-select bluerov2_interface_bridge && source install/setup.bash
+```
+
+To start the interface bridge:
+```
+ros2 run bluerov2_interface_bridge bridge_node
+```
+
 Use params.yaml to change node parameters during runtime. Upload changes using:
 ```
 ros2 param load /Control_Node ~/bs_ws/src/Bachelor-E2205/controller_package/params/params.yaml
@@ -93,13 +105,6 @@ check .basrc
 export ROS_DOMAIN_ID=1 or whatever it is on drone side
 sudo netplan generate
 sudo netplan apply
-```
-
-## PD params
-```
-controll_mode 0 = open loop, 1 = pd controller
-Setpoint_input_mode 0 = joystick, 1 = param file
-World_frame_type 0 = NED, 1 = Høyrehånds regel
 ```
 
 ## This worked
