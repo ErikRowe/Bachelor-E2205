@@ -66,6 +66,7 @@ class ControlNode : public rclcpp::Node
         bool use_linear_control_xy;
         bool use_linear_control_z;
         double m_scale;
+        bool enable_logging;
 
 
         //Initialization of local variables
