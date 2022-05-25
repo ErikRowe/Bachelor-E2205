@@ -35,3 +35,6 @@
     #Teleoperation settings
     Compensate_NED: true                  # If body frame is in NED, this makes manual control more intuitive
     Manual_control_scaling: 40.0          # Scale manual control sensitivity
+    
+    #Misc
+    Enable_logging: false                 #Enable/Disable logging functionality
