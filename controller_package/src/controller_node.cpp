@@ -19,7 +19,8 @@ ControlNode::ControlNode(const rclcpp::NodeOptions &options)
       use_integrator(declare_parameter<bool>("Enable_integrator", false)),
       use_linear_control_xy(declare_parameter<bool>("Linear_control_xy", false)),
       use_linear_control_z(declare_parameter<bool>("Linear_control_z", false)),
-      m_scale(declare_parameter<double>("Manual_control_scaling", 40.0))
+      m_scale(declare_parameter<double>("Manual_control_scaling", 40.0)),
+      enable_logging(declare_parameter<bool>("Enable_logging", false))
 {
     //Activate subscriptions
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
@@ -144,8 +145,10 @@ void ControlNode::controller_node_main()
     publish_forces(tau_final); // Sends tau to a function that publishes to ROS
     z_logging = Controller_.getErrorVector(q, setpoint_holder_.q_d, x, setpoint_holder_.x_d); //Store z for logging
     tau_logging = tau_final; //Store tau for logging
-
-    logging(); //Call logging function
+    
+    if (enable_logging){
+        logging(); //Call logging function
+    }
 
     for (int i = 0; i < 6; i++){
         last_tick_active_actions[i] = active_actions[i];
@@ -201,6 +204,7 @@ void ControlNode::get_ros2_params(){
     this->get_parameter("Linear_control_xy", use_linear_control_xy);
     this->get_parameter("Linear_control_z", use_linear_control_z);
     this->get_parameter("Manual_control_scaling", m_scale);
+    this->get_parameter("Enable_logging", enable_logging);
 
     //Controller parameters
     this->get_parameter("Weight", weight);
