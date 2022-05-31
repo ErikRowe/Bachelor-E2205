@@ -2,8 +2,11 @@
 Repository that organizes the work of group E2205
 
 This repository consists of several packages, but some of them are only used as interfaces between different BlueROV2s.
+
 "Bluerov2_communication"-package is used in parallell with QGroundControl for the standard BlueROV2 Heavy.
+
 "Bluerov2_interface_bridge"-package is used to interface the controller_package with actuator drivers on a specific, modified BlueROV2 Heavy.
+
 "Bluerov_interfaces"-package is a message interface used by the modified BlueROV2 Heavy, and is needed to build "Bluerov2_interface_bridge".
 
 
