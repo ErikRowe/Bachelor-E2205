@@ -9,6 +9,8 @@ This repository consists of several packages, but some of them are only used as 
 
 "Bluerov_interfaces"-package is a message interface used by the modified BlueROV2 Heavy, and is needed to build "Bluerov2_interface_bridge".
 
+Simulation is not a ROS2 package, but contains the files we used to simulate and plot responses. May be removed at a later date.
+
 
 
 # Installation:
