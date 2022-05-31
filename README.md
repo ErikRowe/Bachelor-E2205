@@ -15,6 +15,7 @@ Simulation is not a ROS2 package, but contains the files we used to simulate and
 
 # Installation:
 
+For a more detailed installation and instruction guide, see "Installation guide.pdf".
 If cloning to another folder, remember to change the commands to match the correct folder.
 
 Clone repository:
