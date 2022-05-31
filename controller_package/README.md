@@ -49,3 +49,4 @@ Tested on Ubuntu Focal Fossa (20.04) using ROS2 Galactic.
 | Linear_control_z | Enable/disable control along the z-axis |
 | Enable_controller | Enable/disable controller output values |
 | Enable_integrator | Enable/disable integrator in the controller |
+| Enable_logging | Enable/disable custom logging to .xlsx file |
