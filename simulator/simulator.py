@@ -1,12 +1,10 @@
-from locale import normalize
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 from scipy.integrate import odeint
-import os
 import math
 
-# Constants
+# Constants from https://theses.flinders.edu.au/view/27aa0064-9de2-441c-8a17-655405d5fc2e/1
 m = 11.5                    # Kg
 W = 112.8                   # Newton
 B = 114.8                   # Newton
@@ -41,31 +39,30 @@ K_pdot = -0.12              # Kg m**2/rad
 M_qdot = -0.12              # Kg m**2/rad
 N_rdot = -0.12              # Kg m**2/rad
 
-
+# Function to split matrices into sub-matrices
 def split(array, nrows, ncols):
-    """Split a matrix into sub-matrices."""
     r, h = array.shape
     return (array.reshape(h//nrows, nrows, -1, ncols)
             .swapaxes(1, 2)
             .reshape(-1, nrows, ncols))
 
-
+# Function to combine 4 matrices into one
 def Combine4(M11, M12, M21, M22):
     return np.array(np.concatenate((np.concatenate((M11, M12), axis=1),
                                     np.concatenate((M21, M22), axis=1))))
 
-
+# Function to create Skew symetric operator
 def S(a):
     return np.array([[0, -a[2], a[1]], [a[2], 0, -a[0]], [-a[1], a[0], 0]])
 
-
+# Function to create Coordinate transformation matrix from https://ieeexplore.ieee.org/document/381209
 def U(q):
     e = np.array([q[1], q[2], q[3]])
     top = -e
     bottom = q[0] * I3x3 + S(e)
     return np.array([top, bottom[0], bottom[1], bottom[2]])
 
-
+# Function to create Corriolis matrix from https://ieeexplore.ieee.org/document/381209
 def C(v):
     global _M11, _M12, _M21, _M22
     C11 = Zero3x3
@@ -74,19 +71,19 @@ def C(v):
     C22 = -S(_M22@v[:3] + _M21@v[3:])
     return Combine4(C11, C12, C21, C22)
 
-
+# Function to create Hydrodynamic dampening matrix from https://ieeexplore.ieee.org/document/381209
 def D(nu):
     DL = -np.diag((X_u, Y_v, Z_w, K_p, M_q, N_r))
     DNL = -np.diag((X_u_abs*abs(nu[0]), Y_v_abs*abs(nu[1]), Z_w_abs*abs(
         nu[2]), K_p_abs*abs(nu[3]), M_q_abs*abs(nu[4]), N_r_abs*abs(nu[5])))
     return DL + DNL
 
-
+# Function to create Kp matrix from https://ieeexplore.ieee.org/document/381209
 def Kp(q):
     c_gains = np.array([[c_roll],[c_pitch],[c_yaw]])
     return Combine4(np.transpose(R.from_quat(q).as_matrix())*Kx, Zero3x3, Zero3x3, c_gains*I3x3)
 
-
+# Function performing quaternion multiplication
 def quatMul(q1, q2):
     M11 = np.array([q1[0]])
     M12 = np.array(-q1[1:])
@@ -97,19 +94,20 @@ def quatMul(q1, q2):
     result = np.array([Mx, Kk[0], Kk[1], Kk[2]])
     return result@q2
 
-
+# Function to get complex conjugate of a quaternion
 def conjugate(q):
     return np.array([q[0], -q[1], -q[2], -q[3]])
 
-
+# Function to make the signum fuction 
 def sign(a):
     return 1 if a >= 0 else -1
 
-
+# Defines zero matrices and inendity matrix 
 Zero3x3 = np.array([[0]*3]*3)
 Zero4x3 = np.array([[0]*3]*4)
 I3x3 = np.diag([1]*3)
 
+# Create inerita matrix from https://ieeexplore.ieee.org/document/381209
 _M11rb = np.array([[m, 0, 0], [0, m, 0], [0, 0, m]])
 _M12rb = np.array([[0, m*r_g[2][0], 0], [-m*r_g[2][0], 0, 0], [0, 0, 0]])
 _M21rb = np.array([[0, -m*r_g[2][0], 0], [m*r_g[2][0], 0, 0], [0, 0, 0]])
@@ -126,28 +124,12 @@ M = Mrb + MA
 _M11, _M12, _M21, _M22 = split(M,3,3)
 
 
-# os.remove('C:\Users\elias\Documents\Debugging\v.txt')
-# os.remove('C:\Users\elias\Documents\Debugging\q.txt')
-# os.remove('C:\Users\elias\Documents\Debugging\x.txt')
-# Python program to implement Runge Kutta method
+# Function to make pair of ODEs from https://ieeexplore.ieee.org/document/381209
 def f(zeta,t):
     global M
     x = zeta[:3]
-    # file = open('C:\Users\elias\Documents\Debugging\x.txt','a')
-    # file.write(repr(x) + "\n")
-    # file.close
     q = zeta[3:7]/np.linalg.norm(zeta[3:7])
-    
-    # file = open('C:\Users\elias\Documents\Debugging\q.txt','a')
-    # file.write(repr(q) + "\n")
-    # file.close
-    
     v = zeta[7:]
-    
-    # file = open('C:\Users\elias\Documents\Debugging\v.txt','a')
-    # file.write(repr(v) + "\n")
-    # file.close
-
     z1 = x - x_d
     q_tilde = quatMul(conjugate(q_d), q)
     q_tilde /= np.linalg.norm(q_tilde)
@@ -158,7 +140,6 @@ def f(zeta,t):
     zetaDot = np.concatenate([zeta11, zeta22])@v
     vDot = np.linalg.inv(M)@(-C(v)@v-D(v)@v-Kd@v-Kp(q)@z)
     xDot = np.concatenate([zetaDot, vDot])
-
     return xDot
 
 
@@ -223,15 +204,14 @@ ang_speed = [0, 0, 0]
 v_init = np.concatenate((lin_speed, ang_speed))
 zeta0 = np.concatenate([x_init, q_init, v_init])
 
-
 ## Desired position and attitude
 x_d = np.array([0, 0,0])
 q_d = np.array(get_quaternion_from_euler(0,45,0))
 ################## Simulation ##################################################################################### 
 start_time = 0
 end_time = 15
-stepsize = round(end_time/0.03) #5/x = 0.03 => end_time/0.03
-t = np.linspace(start_time,end_time,stepsize)  # gjør om slik at det samples hver 30ms = 0.03 s
+stepsize = round(end_time/0.03) 
+t = np.linspace(start_time,end_time,stepsize) 
 
 Kx = 0
 c_yaw = 20
@@ -276,22 +256,23 @@ heave_speed = sim[:, 9]
 roll_speed = sim[:, 10]
 pitch_speed = sim[:, 11]
 yaw_speed = sim[:, 12]
-## Plot
-#### PARAM TESTING ####
+## Plot 
+# Uncomment everything under '### ... ###' to get plot the desired plot
+
 ### Quaternions ###
-fig, axs = plt.subplots(1, 4, figsize=(8, 5))
-axs[0].plot(t, eta[0])
-axs[1].plot(t, epsilon1[0])
-axs[2].plot(t, epsilon2[0])
-axs[3].plot(t, epsilon3[0])
-axs[0].set_title('w')
-axs[1].set_title('x')
-axs[2].set_title('y')
-axs[3].set_title('z')
-for ax in axs:
-    ax.grid()
-    ax.set_xlabel('t [s]')
-    ax.set_ylim([-1,1])
+# fig, axs = plt.subplots(1, 4, figsize=(8, 5))
+# axs[0].plot(t, eta[0])
+# axs[1].plot(t, epsilon1[0])
+# axs[2].plot(t, epsilon2[0])
+# axs[3].plot(t, epsilon3[0])
+# axs[0].set_title('w')
+# axs[1].set_title('x')
+# axs[2].set_title('y')
+# axs[3].set_title('z')
+# for ax in axs:
+#     ax.grid()
+#     ax.set_xlabel('t [s]')
+#     ax.set_ylim([-1,1])
 
 ### YAW ###
 # fig, axs = plt.subplots(1, 2, figsize=(8, 5))
@@ -305,7 +286,7 @@ for ax in axs:
 #     ax.grid()
 #     ax.set_xlabel('t [s]')
 
-# ### PITCH ###
+### PITCH ###
 # fig, axs = plt.subplots(1, 2, figsize=(8, 5))
 # axs[0].plot(t, pitch_speed)
 # axs[1].plot(t, euler_pitch)
@@ -317,7 +298,7 @@ for ax in axs:
 #     ax.grid()
 #     ax.set_xlabel('t [s]')
 
-# ### ROLL ###
+### ROLL ###
 # fig, axs = plt.subplots(1, 2, figsize=(8, 5))
 # axs[0].plot(t, roll_speed)
 # axs[1].plot(t, euler_roll)
@@ -329,7 +310,7 @@ for ax in axs:
 #     ax.grid()
 #     ax.set_xlabel('t [s]')
 
-# Linear and angular speeds
+### Linear and angular speeds ###
 # fig, axs = plt.subplots(2, 3, figsize=(8, 5))
 # axs[0,0].set_ylabel('x [m/s]')
 # axs[0,0].set_title('Surge')
@@ -359,7 +340,7 @@ for ax in axs:
 
 
 
-# # 2D Attitude
+### 2D Attitude ###
 # fig, axs = plt.subplots(1, 3, figsize=(8, 5))
 # axs[0].set_ylabel('x [grader]')
 # axs[0].set_title('Roll')
@@ -375,7 +356,7 @@ for ax in axs:
 #     ax.grid()
 #     ax.set_xlabel('t [s]')
 
-# # 3D Position
+### 3D Position ###
 # # fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 # # ax.set_xlabel('x [m]')
 # # ax.set_ylabel('y [m]')
@@ -385,7 +366,7 @@ for ax in axs:
 # # ax.set_zlim([0,10])
 # # ax.plot3D(surge, sway, heave)
 
-# # 2D Position
+### 2D Position ###
 # fig, axs = plt.subplots(1, 3, figsize=(20, 8))
 # axs[0].set_ylabel('x [m]')
 # axs[0].set_title('Surge')
